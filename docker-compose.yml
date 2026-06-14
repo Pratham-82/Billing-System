@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  database:
+    image: mongo:latest
+    container_name: billing_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - billing_network
+
+  server:
+    build: ./server
+    container_name: billing_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://database:27017/wallpaper_billing
+    depends_on:
+      - database
+    networks:
+      - billing_network
+
+  client:
+    build: ./client
+    container_name: billing_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+    networks:
+      - billing_network
+
+volumes:
+  mongo_data:
+
+networks:
+  billing_network:
+    driver: bridge

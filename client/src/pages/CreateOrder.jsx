@@ -87,13 +87,13 @@ export default function CreateOrder() {
   const [loadedCustomer, setLoadedCustomer] = useState(null);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('wallpaper_catalog') || '[]');
-    setCatalog(stored);
+    const loadCatalogAndOrder = async () => {
+      try {
+        setLoading(true);
+        const catalogData = await api.getItems();
+        setCatalog(catalogData);
 
-    if (isEdit) {
-      const fetchOrder = async () => {
-        try {
-          setLoading(true);
+        if (isEdit) {
           const order = await api.getOrder(id);
           setBillNumber(order.billNumber);
           setBillDate(order.billDate ? order.billDate.split('T')[0] : '');
@@ -107,7 +107,7 @@ export default function CreateOrder() {
           setTaxPercent(Number(taxPct.toFixed(2)));
 
           const mappedItems = order.items.map((item) => {
-            const inCatalog = stored.some((c) => c.name === item.wallpaperName);
+            const inCatalog = catalogData.some((c) => c.name === item.wallpaperName);
             return {
               type: item.type,
               wallpaperName: item.wallpaperName,
@@ -128,24 +128,17 @@ export default function CreateOrder() {
             setSelectedCustomerId(order.customer._id || order.customer);
             setLoadedCustomer(order.customer);
           }
-        } catch (err) {
-          setError(err.message);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchOrder();
-    } else {
-      const fetchNextBill = async () => {
-        try {
+        } else {
           const { nextBillNumber } = await api.getNextBillNumber();
           setNextBillNo(nextBillNumber);
-        } catch (err) {
-          console.error('Failed to load next bill number:', err);
         }
-      };
-      fetchNextBill();
-    }
+      } catch (err) {
+        setError(err.message || 'Failed to load details');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCatalogAndOrder();
   }, [id, isEdit]);
 
   const isBuilder = useMemo(() => {

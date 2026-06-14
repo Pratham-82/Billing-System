@@ -6,18 +6,7 @@ import { formatCurrency } from '../utils/format';
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  // Initialize default catalog patterns if empty
-  useEffect(() => {
-    if (!localStorage.getItem('wallpaper_catalog')) {
-      const defaultCatalog = [
-        { name: "Royal Damask Gold", type: "standard" },
-        { name: "Classic Brick Textured", type: "standard" },
-        { name: "Modern Geometric Slate", type: "custom" },
-        { name: "Floral Watercolor Meadow", type: "custom" }
-      ];
-      localStorage.setItem('wallpaper_catalog', JSON.stringify(defaultCatalog));
-    }
-  }, []);
+  // Catalog seeding is now handled by the backend server.
   
   // Modal states
   const [activeModal, setActiveModal] = useState(null); // 'customer' | 'item' | null
@@ -58,36 +47,30 @@ export default function Dashboard() {
   }
 
 
-  // Handle Add Item submit (saves to catalog in localStorage)
-  function handleItemSubmit(e) {
+  // Handle Add Item submit
+  async function handleItemSubmit(e) {
     e.preventDefault();
     setError('');
+    setLoading(true);
     try {
       if (!itemForm.name.trim()) {
         throw new Error('Name is required.');
       }
 
-      // Load current catalog from localStorage
-      const currentCatalog = JSON.parse(localStorage.getItem('wallpaper_catalog') || '[]');
-      
-      // Check for duplicate name
-      const exists = currentCatalog.some(item => item.name.toLowerCase() === itemForm.name.trim().toLowerCase());
-      if (exists) {
-        throw new Error('An item with this item type already exists in the catalog.');
-      }
-
       const newItem = {
         name: itemForm.name.trim(),
         type: itemForm.type,
-        defaultPrice: itemForm.defaultPrice ? Number(itemForm.defaultPrice) : ''
+        defaultPrice: itemForm.defaultPrice ? Number(itemForm.defaultPrice) : 0
       };
 
-      localStorage.setItem('wallpaper_catalog', JSON.stringify([...currentCatalog, newItem]));
-      triggerToast(`Item Type "${newItem.name}" added to catalog successfully!`);
+      const data = await api.createItem(newItem);
+      triggerToast(`Item Type "${data.name}" added to catalog successfully!`);
       setItemForm({ name: '', type: 'quantity', defaultPrice: '' });
       setActiveModal(null);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to add item type');
+    } finally {
+      setLoading(false);
     }
   }
 

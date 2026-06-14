@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 
 const customerRoutes = require('./routes/customers');
 const orderRoutes = require('./routes/orders');
+const itemRoutes = require('./routes/items');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -19,6 +20,7 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/customers', customerRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/items', itemRoutes);
 
 // Serve client static assets and handle client-side routing fallback
 const path = require('path');

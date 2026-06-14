@@ -1,19 +1,31 @@
 import { useEffect, useState } from 'react';
+import { api } from '../api';
 import { formatCurrency } from '../utils/format';
 
 export default function Items() {
   const [catalog, setCatalog] = useState([]);
   const [search, setSearch] = useState('');
   const [activeModal, setActiveModal] = useState(null); // 'add' | 'edit' | null
-  const [editingIndex, setEditingIndex] = useState(-1);
+  const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({ name: '', type: 'quantity', defaultPrice: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  // Load catalog from localStorage
+  // Load catalog from database
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('wallpaper_catalog') || '[]');
-    setCatalog(stored);
+    const fetchCatalog = async () => {
+      try {
+        setLoading(true);
+        const data = await api.getItems();
+        setCatalog(data);
+      } catch (err) {
+        console.error('Failed to load item types catalog:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCatalog();
   }, []);
 
   function triggerToast(message, type = 'success') {
@@ -29,15 +41,15 @@ export default function Items() {
   }
 
   // Open edit modal
-  function openEditModal(index, item) {
+  function openEditModal(item) {
     setError('');
-    setEditingIndex(index);
+    setEditingItem(item);
     setForm({ name: item.name, type: item.type, defaultPrice: item.defaultPrice ?? '' });
     setActiveModal('edit');
   }
 
   // Save changes (both Add and Edit)
-  function handleFormSubmit(e) {
+  async function handleFormSubmit(e) {
     e.preventDefault();
     setError('');
 
@@ -48,44 +60,40 @@ export default function Items() {
       return;
     }
 
-    const updatedCatalog = [...catalog];
-
-    // Check duplicate name (excluding currently edited item)
-    const duplicate = updatedCatalog.some(
-      (item, i) => i !== editingIndex && item.name.toLowerCase() === nameClean.toLowerCase()
-    );
-
-    if (duplicate) {
-      setError('An item with this name already exists in the catalog.');
-      return;
-    }
-
-    const newItem = {
+    const payload = {
       name: nameClean,
       type: form.type,
-      defaultPrice: form.defaultPrice ? Number(form.defaultPrice) : '',
+      defaultPrice: form.defaultPrice ? Number(form.defaultPrice) : 0,
     };
 
-    if (activeModal === 'add') {
-      updatedCatalog.push(newItem);
-      triggerToast(`Item "${nameClean}" added successfully!`);
-    } else if (activeModal === 'edit') {
-      updatedCatalog[editingIndex] = newItem;
-      triggerToast(`Item "${nameClean}" updated successfully!`);
+    try {
+      if (activeModal === 'add') {
+        const newItem = await api.createItem(payload);
+        setCatalog((prev) => [...prev, newItem].sort((a, b) => a.name.localeCompare(b.name)));
+        triggerToast(`Item "${nameClean}" added successfully!`);
+      } else if (activeModal === 'edit') {
+        const updatedItem = await api.updateItem(editingItem._id, payload);
+        setCatalog((prev) =>
+          prev.map((item) => (item._id === editingItem._id ? updatedItem : item)).sort((a, b) => a.name.localeCompare(b.name))
+        );
+        triggerToast(`Item "${nameClean}" updated successfully!`);
+      }
+      setActiveModal(null);
+    } catch (err) {
+      setError(err.message || 'Something went wrong');
     }
-
-    localStorage.setItem('wallpaper_catalog', JSON.stringify(updatedCatalog));
-    setCatalog(updatedCatalog);
-    setActiveModal(null);
   }
 
   // Delete item
-  function handleDelete(index, name) {
+  async function handleDelete(id, name) {
     if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
-      const updatedCatalog = catalog.filter((_, i) => i !== index);
-      localStorage.setItem('wallpaper_catalog', JSON.stringify(updatedCatalog));
-      setCatalog(updatedCatalog);
-      triggerToast(`Item "${name}" deleted successfully!`);
+      try {
+        await api.deleteItem(id);
+        setCatalog((prev) => prev.filter((item) => item._id !== id));
+        triggerToast(`Item "${name}" deleted successfully!`);
+      } catch (err) {
+        triggerToast(err.message || 'Failed to delete item', 'error');
+      }
     }
   }
 
@@ -126,7 +134,9 @@ export default function Items() {
         />
       </div>
 
-      {filteredCatalog.length === 0 ? (
+      {loading ? (
+        <div className="empty-state">Loading item catalog...</div>
+      ) : filteredCatalog.length === 0 ? (
         <div className="empty-state">No items found in the catalog.</div>
       ) : (
         <div className="table-wrap">
@@ -142,11 +152,8 @@ export default function Items() {
             </thead>
             <tbody>
               {filteredCatalog.map((item, index) => {
-                // Find actual index in complete catalog (so editing matches target correctly)
-                const actualIndex = catalog.findIndex((c) => c.name === item.name);
-                
                 return (
-                  <tr key={index}>
+                  <tr key={item._id || index}>
                     <td>{index + 1}</td>
                     <td style={{ fontWeight: 'bold' }}>{item.name}</td>
                     <td>
@@ -162,14 +169,14 @@ export default function Items() {
                         <button
                           type="button"
                           className="btn btn-secondary"
-                          onClick={() => openEditModal(actualIndex, item)}
+                          onClick={() => openEditModal(item)}
                         >
                           Edit
                         </button>
                         <button
                           type="button"
                           className="btn btn-danger"
-                          onClick={() => handleDelete(actualIndex, item.name)}
+                          onClick={() => handleDelete(item._id, item.name)}
                         >
                           Delete
                         </button>

@@ -1,6 +1,4 @@
-import PaymentBadge from './PaymentBadge';
 import { formatCurrency } from '../utils/format';
-import { getAmountPaid } from '../utils/payment';
 import logo from '../logo.png';
 
 function formatDate(date) {
@@ -40,13 +38,6 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
         <div className="bill-meta" style={{ textAlign: 'right' }}>
           <div><strong>Bill No:</strong> {order.billNumber}</div>
           <div><strong>Date:</strong> {formatDate(order.billDate || order.createdAt)}</div>
-          <div style={{ marginTop: 8 }}>
-            <strong>Payment:</strong>{' '}
-            <PaymentBadge order={order} />
-          </div>
-          {order.paidAt && getAmountPaid(order) > 0 && (
-            <div><strong>Last payment:</strong> {formatDate(order.paidAt)}</div>
-          )}
         </div>
       </div>
 
@@ -120,10 +111,7 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
 
       {(() => {
         const currentBillTotal = order.grandTotal;
-        const currentAmountPaid = getAmountPaid(order);
-        const currentBillDue = currentBillTotal - currentAmountPaid;
-        const totalOutstanding = customerBalance !== undefined ? customerBalance : currentBillDue;
-        const oldDues = Math.max(0, totalOutstanding - currentBillDue);
+        const totalOutstanding = customerBalance !== undefined ? customerBalance : currentBillTotal;
 
         return (
           <div className="totals">
@@ -136,54 +124,17 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
               <span>{formatCurrency(currentBillTotal)}</span>
             </div>
             
-            <div><span>Balance due</span><span>{formatCurrency(oldDues)}</span></div>
-            <div><span>Amount paid</span><span>{formatCurrency(currentAmountPaid)}</span></div>
-            
-            <div className="grand" style={{ borderTop: '2px double var(--border)', marginTop: '8px', paddingTop: '8px' }}>
-              <span>Grand Total</span>
-              <span className={totalOutstanding > 0 ? 'text-danger' : 'text-success'} style={{ fontWeight: 'bold' }}>
-                {formatCurrency(totalOutstanding)}
-              </span>
-            </div>
+            {customerBalance !== undefined && (
+              <div className="grand" style={{ borderTop: '2px double var(--border)', marginTop: '8px', paddingTop: '8px' }}>
+                <span>Account Balance Due</span>
+                <span className={totalOutstanding > 0 ? 'text-danger' : 'text-success'} style={{ fontWeight: 'bold' }}>
+                  {formatCurrency(totalOutstanding)}
+                </span>
+              </div>
+            )}
           </div>
         );
       })()}
-
-      <div style={{ marginTop: 16 }} className="no-print">
-        <strong>Payment Status:</strong>{' '}
-        <PaymentBadge order={order} />
-        {order.paidAt && getAmountPaid(order) > 0 && (
-          <span className="bill-meta" style={{ marginLeft: 8 }}>
-            Last updated: {formatDate(order.paidAt)}
-          </span>
-        )}
-      </div>
-
-      {order.paymentLogs && order.paymentLogs.length > 0 && (
-        <div style={{ marginTop: 20 }} className="no-print">
-          <strong>Payment History:</strong>
-          <div className="table-wrap" style={{ marginTop: 8, maxWidth: '400px' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th style={{ padding: '4px 8px' }}>Date</th>
-                  <th style={{ padding: '4px 8px', textAlign: 'right' }}>Amount Paid</th>
-                </tr>
-              </thead>
-              <tbody>
-                {order.paymentLogs.map((log, index) => (
-                  <tr key={index}>
-                    <td style={{ padding: '4px 8px' }}>{formatDate(log.date)}</td>
-                    <td style={{ padding: '4px 8px', textAlign: 'right', fontWeight: 'bold' }}>
-                      {formatCurrency(log.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
       {order.notes && (
         <div style={{ marginTop: 20 }}>

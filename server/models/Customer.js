@@ -8,6 +8,16 @@ const customerSchema = new mongoose.Schema(
     address: { type: String, trim: true },
     customerType: { type: String, trim: true, default: 'retail' },
     openingBalance: { type: Number, default: 0 },
+    totalPaid: { type: Number, default: 0 },
+    totalDiscount: { type: Number, default: 0 },
+    paymentLogs: [
+      {
+        amount: { type: Number, required: true },
+        discount: { type: Number, default: 0 },
+        date: { type: Date, default: Date.now },
+        notes: { type: String, trim: true }
+      }
+    ],
   },
   { timestamps: true }
 );

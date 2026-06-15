@@ -42,11 +42,11 @@ router.get('/', async (req, res) => {
     const customersWithBalances = customers.map((customer) => {
       const cId = customer._id.toString();
       const customerOrders = ordersByCustomer[cId] || [];
-      let balanceDue = customer.openingBalance || 0;
+      let totalBilled = 0;
       customerOrders.forEach((order) => {
-        const paid = getEffectiveAmountPaid(order);
-        balanceDue += Math.max(0, order.grandTotal - paid);
+        totalBilled += order.grandTotal || 0;
       });
+      const balanceDue = (customer.openingBalance || 0) + totalBilled - (customer.totalPaid || 0) - (customer.totalDiscount || 0);
       return {
         ...customer.toObject(),
         balanceDue,
@@ -68,29 +68,21 @@ router.get('/:id/account', async (req, res) => {
 
     const orders = await Order.find({ customer: customer._id })
       .sort({ createdAt: -1 })
-      .select('billNumber grandTotal paymentStatus amountPaid paidAt createdAt items');
+      .select('billNumber grandTotal createdAt items');
 
     let totalBilled = 0;
-    let totalPaid = 0;
-    let unpaidCount = 0;
-
     orders.forEach((order) => {
-      const paid = getEffectiveAmountPaid(order);
       totalBilled += order.grandTotal;
-      totalPaid += paid;
-      if (paid < order.grandTotal) {
-        unpaidCount += 1;
-      }
     });
 
     res.json({
       customer,
       account: {
         totalBilled,
-        totalPaid,
-        balanceDue: (totalBilled - totalPaid) + (customer.openingBalance || 0),
+        totalPaid: customer.totalPaid || 0,
+        totalDiscount: customer.totalDiscount || 0,
+        balanceDue: (customer.openingBalance || 0) + totalBilled - (customer.totalPaid || 0) - (customer.totalDiscount || 0),
         orderCount: orders.length,
-        unpaidCount,
       },
       orders,
     });
@@ -161,7 +153,7 @@ router.put('/:id', async (req, res) => {
 router.post('/:id/payment', async (req, res) => {
   try {
     const customerId = req.params.id;
-    let paymentAmount = Number(req.body.amount);
+    let paymentAmount = Number(req.body.amount) || 0;
     let discountAmount = Number(req.body.discount) || 0;
 
     if (isNaN(paymentAmount) || paymentAmount < 0) {
@@ -179,83 +171,27 @@ router.post('/:id/payment', async (req, res) => {
       return res.status(404).json({ message: 'Customer not found' });
     }
 
-    let remainingPayment = paymentAmount;
-    let remainingDiscount = discountAmount;
+    // Update customer totals
+    customer.totalPaid = (customer.totalPaid || 0) + paymentAmount;
+    customer.totalDiscount = (customer.totalDiscount || 0) + discountAmount;
 
-    // 1. Deduct discount from opening balance first if present
-    if (remainingDiscount > 0 && customer.openingBalance > 0) {
-      const discountToOpening = Math.min(remainingDiscount, customer.openingBalance);
-      customer.openingBalance -= discountToOpening;
-      remainingDiscount -= discountToOpening;
-      await customer.save();
+    // Add to payment logs
+    if (!customer.paymentLogs) {
+      customer.paymentLogs = [];
     }
+    customer.paymentLogs.push({
+      amount: paymentAmount,
+      discount: discountAmount,
+      date: new Date(),
+      notes: req.body.notes || 'Account Payment'
+    });
 
-    // 2. Deduct payment from opening balance first if present
-    if (remainingPayment > 0 && customer.openingBalance > 0) {
-      const paymentToOpening = Math.min(remainingPayment, customer.openingBalance);
-      customer.openingBalance -= paymentToOpening;
-      remainingPayment -= paymentToOpening;
-      await customer.save();
-    }
-
-    // Find all unpaid or partially paid orders for this customer, sorted oldest first
-    const orders = await Order.find({
-      customer: customerId,
-      paymentStatus: { $in: ['unpaid', 'partial'] },
-    }).sort({ createdAt: 1 });
-
-    for (const order of orders) {
-      if (remainingPayment <= 0 && remainingDiscount <= 0) break;
-
-      let orderDue = Math.max(0, order.grandTotal - (order.amountPaid || 0));
-      if (orderDue <= 0) continue;
-
-      // Apply discount to this order first
-      if (remainingDiscount > 0) {
-        const discountToApply = Math.min(remainingDiscount, orderDue);
-        if (discountToApply > 0) {
-          order.discount = (order.discount || 0) + discountToApply;
-          // Recalculate grand total
-          order.grandTotal = Math.round(Math.max(0, order.subtotal - order.discount + order.tax));
-          orderDue = Math.max(0, order.grandTotal - (order.amountPaid || 0));
-          remainingDiscount -= discountToApply;
-        }
-      }
-
-      // Apply payment to this order
-      if (remainingPayment > 0 && orderDue > 0) {
-        const paymentToApply = Math.min(remainingPayment, orderDue);
-        if (paymentToApply > 0) {
-          order.amountPaid = (order.amountPaid || 0) + paymentToApply;
-          order.paidAt = new Date();
-          if (!order.paymentLogs) {
-            order.paymentLogs = [];
-          }
-          order.paymentLogs.push({
-            amount: paymentToApply,
-            date: new Date()
-          });
-          remainingPayment -= paymentToApply;
-          orderDue = Math.max(0, order.grandTotal - order.amountPaid);
-        }
-      }
-
-      // Set payment status based on updated amounts
-      if (order.amountPaid >= order.grandTotal) {
-        order.paymentStatus = 'paid';
-      } else if (order.amountPaid > 0) {
-        order.paymentStatus = 'partial';
-      } else {
-        order.paymentStatus = 'unpaid';
-      }
-
-      await order.save();
-    }
+    await customer.save();
 
     res.json({
-      message: 'Payment applied successfully',
-      amountApplied: paymentAmount - remainingPayment,
-      discountApplied: discountAmount - remainingDiscount
+      message: 'Payment recorded successfully',
+      amountApplied: paymentAmount,
+      discountApplied: discountAmount
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

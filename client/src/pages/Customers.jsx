@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { api } from '../api';
-import PaymentBadge from '../components/PaymentBadge';
 import { formatCurrency } from '../utils/format';
-import { getAmountPaid, getBalanceDue } from '../utils/payment';
 
 export default function Customers() {
   const [search, setSearch] = useState('');
@@ -417,7 +415,7 @@ export default function Customers() {
               </div>
             </div>
 
-            <div className="account-summary">
+            <div className="account-summary" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '20px' }}>
               <div className="account-stat">
                 <span>Total Billed</span>
                 <strong>{formatCurrency(account.totalBilled)}</strong>
@@ -427,14 +425,18 @@ export default function Customers() {
                 <strong className="text-success">{formatCurrency(account.totalPaid)}</strong>
               </div>
               <div className="account-stat">
+                <span>Total Discount</span>
+                <strong className="text-success">{formatCurrency(account.totalDiscount || 0)}</strong>
+              </div>
+              <div className="account-stat">
                 <span>Balance Due</span>
                 <strong className={account.balanceDue > 0 ? 'text-danger' : 'text-success'}>
                   {formatCurrency(account.balanceDue)}
                 </strong>
               </div>
               <div className="account-stat">
-                <span>Pending Bills</span>
-                <strong>{account.unpaidCount}</strong>
+                <span>Total Bills</span>
+                <strong>{account.orderCount}</strong>
               </div>
             </div>
 
@@ -486,40 +488,66 @@ export default function Customers() {
               </div>
             )}
 
-            {orders.length === 0 ? (
-              <div className="empty-state">No orders for this customer</div>
-            ) : (
-              <div style={{ marginTop: 20, display: 'grid', gap: 12 }}>
-                {orders.map((order) => {
-                  const paid = getAmountPaid(order);
-                  const balance = getBalanceDue(order);
-
-                  return (
-                    <div key={order._id} className="item-card">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', marginTop: 24 }}>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: 12 }}>Bills</h3>
+                {orders.length === 0 ? (
+                  <div className="empty-state">No bills for this customer</div>
+                ) : (
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    {orders.map((order) => (
+                      <div key={order._id} className="item-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '16px' }}>
                         <div>
                           <strong>{order.billNumber}</strong>
                           <div className="bill-meta">
                             {new Date(order.createdAt).toLocaleDateString('en-IN')}
                           </div>
                         </div>
-                        <PaymentBadge order={order} />
+                        <div style={{ textAlign: 'right' }}>
+                          <small className="bill-meta" style={{ fontSize: '0.75rem', display: 'block', marginBottom: 2 }}>Bill Total</small>
+                          <strong style={{ fontSize: '1.1rem' }}>
+                            {formatCurrency(order.grandTotal)}
+                          </strong>
+                        </div>
+                        <div className="btn-row" style={{ margin: 0 }}>
+                          <Link to={`/bill/${order._id}`} className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '0.88rem' }}>
+                            View
+                          </Link>
+                        </div>
                       </div>
-                      <div className="payment-summary inline">
-                        <div><span>Total</span><span>{formatCurrency(order.grandTotal)}</span></div>
-                        <div><span>Paid</span><span className="text-success">{formatCurrency(paid)}</span></div>
-                        <div><span>Due</span><span className={balance > 0 ? 'text-danger' : 'text-success'}>{formatCurrency(balance)}</span></div>
-                      </div>
-                      <div className="btn-row" style={{ marginTop: 12 }}>
-                        <Link to={`/bill/${order._id}`} className="btn btn-primary">
-                          View Bill
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+
+              <div>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: 12 }}>Payment Logs</h3>
+                {!customer.paymentLogs || customer.paymentLogs.length === 0 ? (
+                  <div className="empty-state">No payments recorded yet</div>
+                ) : (
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    {customer.paymentLogs.map((log, index) => (
+                      <div key={index} className="item-card" style={{ padding: '16px', background: 'var(--surface-alt)', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                          <div>
+                            <strong className="text-success">+{formatCurrency(log.amount)}</strong>
+                            {log.discount > 0 && (
+                              <span style={{ fontSize: '0.8rem', color: 'var(--accent)', marginLeft: 8 }}>
+                                (Discount: {formatCurrency(log.discount)})
+                              </span>
+                            )}
+                            <div className="bill-meta" style={{ marginTop: 4 }}>{log.notes || 'Payment'}</div>
+                          </div>
+                          <div className="bill-meta">
+                            {new Date(log.date).toLocaleDateString('en-IN')}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </>
         )}
       </div>

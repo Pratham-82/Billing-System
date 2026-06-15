@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { api } from '../api';
-import PaymentBadge from '../components/PaymentBadge';
+// PaymentBadge import removed as order-level payment status is deprecated
 import { formatCurrency } from '../utils/format';
 
 export default function Reports() {
@@ -273,7 +273,6 @@ export default function Reports() {
                   <th>Type</th>
                   <th>Items Summary</th>
                   <th>Total Amount</th>
-                  <th>Payment Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -297,9 +296,6 @@ export default function Reports() {
                       {getItemSummaryString(order.items)}
                     </td>
                     <td style={{ fontWeight: 'bold' }}>{formatCurrency(order.grandTotal)}</td>
-                    <td>
-                      <PaymentBadge order={order} />
-                    </td>
                   </tr>
                 ))}
               </tbody>

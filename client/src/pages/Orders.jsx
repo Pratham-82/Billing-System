@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import PaymentBadge from '../components/PaymentBadge';
 import { formatCurrency } from '../utils/format';
-import { getAmountPaid, getBalanceDue } from '../utils/payment';
 
 export default function Orders() {
   const [search, setSearch] = useState('');
-  const [paymentFilter, setPaymentFilter] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [orders, setOrders] = useState([]);
@@ -20,7 +17,6 @@ export default function Orders() {
     try {
       const data = await api.getOrders({
         search,
-        paymentStatus: paymentFilter || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       });
@@ -35,7 +31,7 @@ export default function Orders() {
   useEffect(() => {
     const timer = setTimeout(loadOrders, 300);
     return () => clearTimeout(timer);
-  }, [search, paymentFilter, startDate, endDate]);
+  }, [search, startDate, endDate]);
 
   return (
     <div className="card">
@@ -49,16 +45,6 @@ export default function Orders() {
             onChange={(e) => setSearch(e.target.value)}
             style={{ flex: 1, minWidth: '200px' }}
           />
-          <select
-            value={paymentFilter}
-            onChange={(e) => setPaymentFilter(e.target.value)}
-            style={{ width: '220px' }}
-          >
-            <option value="">All payments</option>
-            <option value="paid">Fully paid</option>
-            <option value="partial">Partially paid</option>
-            <option value="unpaid">Unpaid</option>
-          </select>
         </div>
         
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: '12px', border: '1px solid var(--border)' }}>
@@ -108,17 +94,12 @@ export default function Orders() {
                 <th>Bill No</th>
                 <th>Customer</th>
                 <th>Total</th>
-                <th>Paid / Balance</th>
-                <th>Status</th>
                 <th>Date</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order) => {
-                const paid = getAmountPaid(order);
-                const balance = getBalanceDue(order);
-
                 return (
                   <tr key={order._id}>
                     <td>{order.billNumber}</td>
@@ -127,15 +108,6 @@ export default function Orders() {
                       <small style={{ color: 'var(--text-muted)' }}>{order.customer?.phone}</small>
                     </td>
                     <td>{formatCurrency(order.grandTotal)}</td>
-                    <td>
-                      <div>{formatCurrency(paid)} paid</div>
-                      <small className={balance > 0 ? 'text-danger' : 'text-success'}>
-                        {balance > 0 ? `${formatCurrency(balance)} due` : 'Settled'}
-                      </small>
-                    </td>
-                    <td>
-                      <PaymentBadge order={order} />
-                    </td>
                     <td>
                       {new Date(order.billDate || order.createdAt).toLocaleDateString('en-IN', {
                         day: '2-digit',

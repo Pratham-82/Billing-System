@@ -309,7 +309,7 @@ router.post('/', async (req, res) => {
     );
 
     const billNumber = await generateBillNumber(Order);
-    const payment = normalizePayment(amountPaid, grandTotal);
+    const amtPaid = Number(amountPaid) || 0;
 
     const order = await Order.create({
       billNumber,
@@ -322,9 +322,22 @@ router.post('/', async (req, res) => {
       notes: notes?.trim() || '',
       siteAddress: customer.customerType === 'builder' ? (siteAddress?.trim() || '') : '',
       billDate: billDate ? new Date(billDate) : new Date(),
-      ...payment,
-      paymentLogs: payment.amountPaid > 0 ? [{ amount: payment.amountPaid, date: new Date() }] : [],
+      amountPaid: amtPaid,
     });
+
+    if (amtPaid > 0) {
+      customer.totalPaid = (customer.totalPaid || 0) + amtPaid;
+      if (!customer.paymentLogs) {
+        customer.paymentLogs = [];
+      }
+      customer.paymentLogs.push({
+        amount: amtPaid,
+        discount: 0,
+        date: order.billDate || new Date(),
+        notes: `Paid during bill creation (Bill #${order.billNumber})`
+      });
+      await customer.save();
+    }
 
     const populatedOrder = await Order.findById(order._id).populate(
       'customer',
@@ -460,7 +473,9 @@ router.put('/:id', async (req, res) => {
       Number(tax) || 0
     );
 
-    const payment = normalizePayment(amountPaid, grandTotal);
+    const amtPaidNew = Number(amountPaid) || 0;
+    const amtPaidOld = orderDoc.amountPaid || 0;
+    const paymentDiff = amtPaidNew - amtPaidOld;
 
     orderDoc.customer = customer._id;
     orderDoc.items = processedItems;
@@ -470,6 +485,7 @@ router.put('/:id', async (req, res) => {
     orderDoc.grandTotal = grandTotal;
     orderDoc.notes = notes?.trim() || '';
     orderDoc.siteAddress = customer.customerType === 'builder' ? (siteAddress?.trim() || '') : '';
+    orderDoc.amountPaid = amtPaidNew;
 
     if (billDate && !isNaN(new Date(billDate).getTime())) {
       const incomingDateStr = new Date(billDate).toISOString().split('T')[0];
@@ -481,16 +497,21 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    if (orderDoc.amountPaid !== payment.amountPaid || orderDoc.paymentStatus !== payment.paymentStatus) {
-      if (orderDoc.amountPaid !== payment.amountPaid) {
-        orderDoc.paymentLogs = payment.amountPaid > 0 ? [{ amount: payment.amountPaid, date: new Date() }] : [];
-      }
-      orderDoc.amountPaid = payment.amountPaid;
-      orderDoc.paymentStatus = payment.paymentStatus;
-      orderDoc.paidAt = payment.paidAt;
-    }
-
     await orderDoc.save();
+
+    if (paymentDiff !== 0) {
+      customer.totalPaid = (customer.totalPaid || 0) + paymentDiff;
+      if (!customer.paymentLogs) {
+        customer.paymentLogs = [];
+      }
+      customer.paymentLogs.push({
+        amount: paymentDiff,
+        discount: 0,
+        date: new Date(),
+        notes: `Adjusted during bill edit (Bill #${orderDoc.billNumber})`
+      });
+      await customer.save();
+    }
 
     const populatedOrder = await Order.findById(orderDoc._id).populate(
       'customer',

@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
 import Bill from '../components/Bill';
-import PaymentBadge, { RecordPayment } from '../components/PaymentBadge';
-import { getBalanceDue } from '../utils/payment';
 
 
 export default function BillView() {
@@ -91,7 +89,6 @@ export default function BillView() {
         <Link to={`/edit-bill/${order._id}`} className="btn btn-secondary">
           Edit Bill
         </Link>
-        <PaymentBadge order={order} />
       </div>
 
       {error && <div className="alert alert-error no-print">{error}</div>}

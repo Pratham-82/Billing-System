@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const customerRoutes = require('./routes/customers');
 const orderRoutes = require('./routes/orders');
 const itemRoutes = require('./routes/items');
+const migratePaymentsToCustomer = require('./utils/migration');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,8 +43,10 @@ if (fs.existsSync(clientIndexHtml)) {
 
 mongoose
   .connect(MONGODB_URI)
-  .then(() => {
+  .then(async () => {
     console.log('Connected to MongoDB');
+    // Run payments migration
+    await migratePaymentsToCustomer();
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });

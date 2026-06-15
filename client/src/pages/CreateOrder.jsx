@@ -369,6 +369,7 @@ export default function CreateOrder() {
               value={billDate}
               onChange={(e) => setBillDate(e.target.value)}
               required
+              readOnly={isEdit}
             />
           </div>
         </div>

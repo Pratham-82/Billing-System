@@ -470,9 +470,6 @@ router.put('/:id', async (req, res) => {
     orderDoc.grandTotal = grandTotal;
     orderDoc.notes = notes?.trim() || '';
     orderDoc.siteAddress = customer.customerType === 'builder' ? (siteAddress?.trim() || '') : '';
-    if (billDate) {
-      orderDoc.billDate = new Date(billDate);
-    }
 
     if (orderDoc.amountPaid !== payment.amountPaid || orderDoc.paymentStatus !== payment.paymentStatus) {
       if (orderDoc.amountPaid !== payment.amountPaid) {

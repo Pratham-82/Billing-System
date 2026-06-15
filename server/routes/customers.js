@@ -22,21 +22,36 @@ router.get('/', async (req, res) => {
     }
 
     const customers = await Customer.find(query).sort({ name: 1 }).limit(50);
+    const customerIds = customers.map((c) => c._id);
 
-    const customersWithBalances = await Promise.all(
-      customers.map(async (customer) => {
-        const orders = await Order.find({ customer: customer._id }).select('grandTotal amountPaid paymentStatus');
-        let balanceDue = customer.openingBalance || 0;
-        orders.forEach((order) => {
-          const paid = getEffectiveAmountPaid(order);
-          balanceDue += Math.max(0, order.grandTotal - paid);
-        });
-        return {
-          ...customer.toObject(),
-          balanceDue,
-        };
-      })
+    // Fetch all orders for all fetched customers in a single batch query
+    const allOrders = await Order.find({ customer: { $in: customerIds } }).select(
+      'customer grandTotal amountPaid paymentStatus'
     );
+
+    // Group orders by customer ID in a map
+    const ordersByCustomer = {};
+    allOrders.forEach((order) => {
+      const cId = order.customer.toString();
+      if (!ordersByCustomer[cId]) {
+        ordersByCustomer[cId] = [];
+      }
+      ordersByCustomer[cId].push(order);
+    });
+
+    const customersWithBalances = customers.map((customer) => {
+      const cId = customer._id.toString();
+      const customerOrders = ordersByCustomer[cId] || [];
+      let balanceDue = customer.openingBalance || 0;
+      customerOrders.forEach((order) => {
+        const paid = getEffectiveAmountPaid(order);
+        balanceDue += Math.max(0, order.grandTotal - paid);
+      });
+      return {
+        ...customer.toObject(),
+        balanceDue,
+      };
+    });
 
     res.json(customersWithBalances);
   } catch (error) {

@@ -786,6 +786,13 @@ export default function CreateOrder() {
             ? (loading ? 'Updating Bill...' : 'Update Bill') 
             : (loading ? 'Creating Bill...' : 'Create Bill')}
         </button>
+        <button 
+          type="button" 
+          className="btn btn-secondary" 
+          onClick={() => navigate('/')}
+        >
+          Cancel
+        </button>
       </div>
     </form>
     </>

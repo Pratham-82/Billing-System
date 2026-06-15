@@ -136,6 +136,7 @@ router.put('/:id', async (req, res) => {
         email: req.body.email?.trim() || '',
         address: req.body.address?.trim() || '',
         customerType: req.body.customerType?.trim() || 'retail',
+        openingBalance: Number(req.body.openingBalance) || 0,
       },
       { new: true, runValidators: true }
     );

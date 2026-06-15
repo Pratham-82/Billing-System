@@ -19,7 +19,7 @@ export default function Customers() {
   const [paymentSuccess, setPaymentSuccess] = useState('');
 
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', phone: '', email: '', address: '', customerType: 'retail' });
+  const [editForm, setEditForm] = useState({ name: '', phone: '', email: '', address: '', customerType: 'retail', openingBalance: '' });
   const [editError, setEditError] = useState('');
   const [editSaving, setEditSaving] = useState(false);
 
@@ -30,6 +30,7 @@ export default function Customers() {
       email: c.email || '',
       address: c.address || '',
       customerType: c.customerType || 'retail',
+      openingBalance: c.openingBalance !== undefined ? String(c.openingBalance) : '',
     });
     setEditError('');
     setIsEditingCustomer(true);
@@ -624,6 +625,16 @@ export default function Customers() {
                   <option value="shopkeeper">Shopkeeper</option>
                   <option value="reference">Reference</option>
                 </select>
+              </div>
+              <div className="field">
+                <label>Opening Balance Due</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editForm.openingBalance}
+                  onChange={(e) => setEditForm({ ...editForm, openingBalance: e.target.value })}
+                  placeholder="0"
+                />
               </div>
               <div className="field">
                 <label>Email</label>

@@ -205,13 +205,11 @@ router.delete('/:id', async (req, res) => {
     if (!customer) {
       return res.status(404).json({ message: 'Customer not found' });
     }
-    // Delete all orders associated with this customer
-    await Order.deleteMany({ customer: customer._id });
     
     // Delete the customer
     await Customer.findByIdAndDelete(customer._id);
 
-    res.json({ message: 'Customer and associated orders deleted successfully' });
+    res.json({ message: 'Customer deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

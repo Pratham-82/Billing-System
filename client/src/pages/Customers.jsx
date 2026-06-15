@@ -61,7 +61,7 @@ export default function Customers() {
   }
 
   async function handleDeleteCustomer(id, name) {
-    if (window.confirm(`Are you sure you want to delete customer "${name}"? WARNING: This will also delete ALL bills/orders associated with this customer.`)) {
+    if (window.confirm(`Are you sure you want to delete customer "${name}"?`)) {
       try {
         await api.deleteCustomer(id);
         setAccountData(null);

@@ -15,6 +15,7 @@ export default function Customers() {
   const [error, setError] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [paymentInput, setPaymentInput] = useState('');
+  const [discountInput, setDiscountInput] = useState('');
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [paymentSuccess, setPaymentSuccess] = useState('');
@@ -222,6 +223,7 @@ export default function Customers() {
 
   async function selectCustomer(customer) {
     setPaymentInput('');
+    setDiscountInput('');
     setPaymentError('');
     setPaymentSuccess('');
     await loadAccount(customer._id);
@@ -232,19 +234,29 @@ export default function Customers() {
     setPaymentError('');
     setPaymentSuccess('');
     const amt = Number(paymentInput);
+    const disc = Number(discountInput) || 0;
     if (isNaN(amt) || amt <= 0) {
-      setPaymentError('Please enter a valid amount.');
+      setPaymentError('Please enter a valid payment amount.');
       return;
     }
-    if (amt > account.balanceDue) {
-      setPaymentError(`Amount cannot exceed the total balance due of ${formatCurrency(account.balanceDue)}`);
+    if (isNaN(disc) || disc < 0) {
+      setPaymentError('Please enter a valid discount amount.');
+      return;
+    }
+    if (amt + disc > account.balanceDue) {
+      setPaymentError(`Total of payment and discount (${formatCurrency(amt + disc)}) cannot exceed the balance due of ${formatCurrency(account.balanceDue)}.`);
       return;
     }
     setSubmittingPayment(true);
     try {
-      await api.recordCustomerPayment(customer._id, amt);
+      await api.recordCustomerPayment(customer._id, amt, disc);
       setPaymentInput('');
-      setPaymentSuccess(`Successfully recorded payment of ${formatCurrency(amt)}!`);
+      setDiscountInput('');
+      if (disc > 0) {
+        setPaymentSuccess(`Successfully recorded payment of ${formatCurrency(amt)} with settlement discount of ${formatCurrency(disc)}!`);
+      } else {
+        setPaymentSuccess(`Successfully recorded payment of ${formatCurrency(amt)}!`);
+      }
       await loadAccount(customer._id);
       const data = await api.getCustomers(search, typeFilter);
       setCustomers(data);
@@ -429,11 +441,23 @@ export default function Customers() {
                     <input
                       type="number"
                       min="1"
-                      max={account.balanceDue}
+                      max={account.balanceDue - (Number(discountInput) || 0)}
                       value={paymentInput}
                       onChange={(e) => setPaymentInput(e.target.value)}
-                      placeholder={`Max: ${account.balanceDue}`}
+                      placeholder={`Max: ${account.balanceDue - (Number(discountInput) || 0)}`}
                       required
+                      style={{ padding: '8px 12px' }}
+                    />
+                  </div>
+                  <div className="field" style={{ margin: 0, flex: 1, minWidth: '150px' }}>
+                    <label>Settlement Discount</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={account.balanceDue - (Number(paymentInput) || 0)}
+                      value={discountInput}
+                      onChange={(e) => setDiscountInput(e.target.value)}
+                      placeholder="e.g. 100"
                       style={{ padding: '8px 12px' }}
                     />
                   </div>
@@ -444,7 +468,10 @@ export default function Customers() {
                     type="button"
                     className="btn btn-secondary"
                     style={{ height: '42px' }}
-                    onClick={() => setPaymentInput(account.balanceDue)}
+                    onClick={() => {
+                      setPaymentInput(account.balanceDue);
+                      setDiscountInput('');
+                    }}
                   >
                     Pay Full
                   </button>

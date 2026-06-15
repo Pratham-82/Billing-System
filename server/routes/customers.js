@@ -147,9 +147,13 @@ router.post('/:id/payment', async (req, res) => {
   try {
     const customerId = req.params.id;
     let paymentAmount = Number(req.body.amount);
+    let discountAmount = Number(req.body.discount) || 0;
 
     if (isNaN(paymentAmount) || paymentAmount <= 0) {
       return res.status(400).json({ message: 'Invalid payment amount' });
+    }
+    if (isNaN(discountAmount) || discountAmount < 0) {
+      return res.status(400).json({ message: 'Invalid discount amount' });
     }
 
     const customer = await Customer.findById(customerId);
@@ -158,12 +162,21 @@ router.post('/:id/payment', async (req, res) => {
     }
 
     let remainingPayment = paymentAmount;
+    let remainingDiscount = discountAmount;
 
-    // Deduct from opening balance first if present
-    if (customer.openingBalance > 0) {
-      const appliedToOpening = Math.min(remainingPayment, customer.openingBalance);
-      customer.openingBalance -= appliedToOpening;
-      remainingPayment -= appliedToOpening;
+    // 1. Deduct discount from opening balance first if present
+    if (remainingDiscount > 0 && customer.openingBalance > 0) {
+      const discountToOpening = Math.min(remainingDiscount, customer.openingBalance);
+      customer.openingBalance -= discountToOpening;
+      remainingDiscount -= discountToOpening;
+      await customer.save();
+    }
+
+    // 2. Deduct payment from opening balance first if present
+    if (remainingPayment > 0 && customer.openingBalance > 0) {
+      const paymentToOpening = Math.min(remainingPayment, customer.openingBalance);
+      customer.openingBalance -= paymentToOpening;
+      remainingPayment -= paymentToOpening;
       await customer.save();
     }
 
@@ -174,35 +187,58 @@ router.post('/:id/payment', async (req, res) => {
     }).sort({ createdAt: 1 });
 
     for (const order of orders) {
-      if (remainingPayment <= 0) break;
+      if (remainingPayment <= 0 && remainingDiscount <= 0) break;
 
-      const orderDue = Math.max(0, order.grandTotal - (order.amountPaid || 0));
+      let orderDue = Math.max(0, order.grandTotal - (order.amountPaid || 0));
       if (orderDue <= 0) continue;
 
-      const paymentToApply = Math.min(remainingPayment, orderDue);
+      // Apply discount to this order first
+      if (remainingDiscount > 0) {
+        const discountToApply = Math.min(remainingDiscount, orderDue);
+        if (discountToApply > 0) {
+          order.discount = (order.discount || 0) + discountToApply;
+          // Recalculate grand total
+          order.grandTotal = Math.round(Math.max(0, order.subtotal - order.discount + order.tax));
+          orderDue = Math.max(0, order.grandTotal - (order.amountPaid || 0));
+          remainingDiscount -= discountToApply;
+        }
+      }
 
-      order.amountPaid = (order.amountPaid || 0) + paymentToApply;
-      
+      // Apply payment to this order
+      if (remainingPayment > 0 && orderDue > 0) {
+        const paymentToApply = Math.min(remainingPayment, orderDue);
+        if (paymentToApply > 0) {
+          order.amountPaid = (order.amountPaid || 0) + paymentToApply;
+          order.paidAt = new Date();
+          if (!order.paymentLogs) {
+            order.paymentLogs = [];
+          }
+          order.paymentLogs.push({
+            amount: paymentToApply,
+            date: new Date()
+          });
+          remainingPayment -= paymentToApply;
+          orderDue = Math.max(0, order.grandTotal - order.amountPaid);
+        }
+      }
+
+      // Set payment status based on updated amounts
       if (order.amountPaid >= order.grandTotal) {
         order.paymentStatus = 'paid';
-      } else {
+      } else if (order.amountPaid > 0) {
         order.paymentStatus = 'partial';
+      } else {
+        order.paymentStatus = 'unpaid';
       }
-      
-      order.paidAt = new Date();
-      if (!order.paymentLogs) {
-        order.paymentLogs = [];
-      }
-      order.paymentLogs.push({
-        amount: paymentToApply,
-        date: new Date()
-      });
 
       await order.save();
-      remainingPayment -= paymentToApply;
     }
 
-    res.json({ message: 'Payment applied successfully', amountApplied: paymentAmount - remainingPayment });
+    res.json({
+      message: 'Payment applied successfully',
+      amountApplied: paymentAmount - remainingPayment,
+      discountApplied: discountAmount - remainingDiscount
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

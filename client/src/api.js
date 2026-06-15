@@ -75,10 +75,10 @@ export const api = {
 
   getCustomerAccount: (id) => request(`/customers/${id}/account`),
 
-  recordCustomerPayment: (id, amount) =>
+  recordCustomerPayment: (id, amount, discount = 0) =>
     request(`/customers/${id}/payment`, {
       method: 'POST',
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify({ amount, discount }),
     }),
 
   getItems: () => request('/items'),

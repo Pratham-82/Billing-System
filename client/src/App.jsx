@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import CreateOrder from './pages/CreateOrder';
@@ -9,6 +10,19 @@ import Reports from './pages/Reports';
 import logo from './logo.png';
 
 function App() {
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   return (
     <div className="app-shell">
       <header className="topbar no-print">
@@ -19,14 +33,38 @@ function App() {
             <p style={{ margin: '4px 0 0' }}>Billing & customer management</p>
           </div>
         </div>
-        <nav className="nav">
-          <NavLink to="/" end>Dashboard</NavLink>
-          <NavLink to="/generate-bill">New Bill</NavLink>
-          <NavLink to="/orders">Orders</NavLink>
-          <NavLink to="/customers">Accounts</NavLink>
-          <NavLink to="/items">Items</NavLink>
-          <NavLink to="/reports">Reports</NavLink>
-        </nav>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <nav className="nav">
+            <NavLink to="/" end>Dashboard</NavLink>
+            <NavLink to="/generate-bill">New Bill</NavLink>
+            <NavLink to="/orders">Orders</NavLink>
+            <NavLink to="/customers">Accounts</NavLink>
+            <NavLink to="/items">Items</NavLink>
+            <NavLink to="/reports">Reports</NavLink>
+          </nav>
+          <button
+            onClick={toggleTheme}
+            className="theme-toggle"
+            aria-label="Toggle theme"
+            style={{
+              background: 'var(--surface-alt)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+              padding: '8px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '40px',
+              height: '40px',
+              fontSize: '1.2rem',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+        </div>
       </header>
 
       <Routes>

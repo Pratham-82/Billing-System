@@ -85,6 +85,7 @@ export default function CreateOrder() {
   const [shouldFocusLastItem, setShouldFocusLastItem] = useState(false);
   const [nextBillNo, setNextBillNo] = useState('');
   const [loadedCustomer, setLoadedCustomer] = useState(null);
+  const [originalOrderBalance, setOriginalOrderBalance] = useState(0);
 
   useEffect(() => {
     const loadCatalogAndOrder = async () => {
@@ -101,6 +102,10 @@ export default function CreateOrder() {
           setSiteAddress(order.siteAddress || '');
           setAmountPaid(order.amountPaid ? order.amountPaid.toString() : '');
           setDiscount(order.discount || 0);
+
+          const oldPaid = order.amountPaid || 0;
+          const oldDue = Math.max(0, order.grandTotal - oldPaid);
+          setOriginalOrderBalance(oldDue);
 
           const base = order.subtotal - (order.discount || 0);
           const taxPct = base > 0 ? (order.tax / base) * 100 : 0;
@@ -728,7 +733,9 @@ export default function CreateOrder() {
           {(() => {
             const selectedCustomer = customers.find(c => c._id === selectedCustomerId) || (loadedCustomer?._id === selectedCustomerId ? loadedCustomer : null);
             if (!selectedCustomer) return null;
-            const prevBalance = selectedCustomer.balanceDue || 0;
+            const prevBalance = isEdit 
+              ? (selectedCustomer.balanceDue || 0) - originalOrderBalance 
+              : (selectedCustomer.balanceDue || 0);
             const newTotalBalance = prevBalance + balanceDue;
 
             return (

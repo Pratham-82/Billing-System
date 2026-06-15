@@ -23,7 +23,10 @@ function formatItemDate(dateStr) {
 export default function Bill({ order, shopName = 'Speaking Wall Interio', customerBalance }) {
   if (!order) return null;
 
-  const customer = order.customer;
+  const customerName = order.customer?.name || order.customerName || 'Deleted Customer';
+  const customerPhone = order.customer?.phone || order.customerPhone || '—';
+  const customerEmail = order.customer?.email || order.customerEmail || '—';
+  const customerAddress = order.customer?.address || order.customerAddress || '—';
 
   return (
     <div className="bill">
@@ -44,10 +47,10 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
       <div className="card" style={{ marginBottom: 20 }}>
         <h3 className="section-title">Customer Details</h3>
         <div className="grid-2">
-          <div><strong>Name:</strong> {customer?.name}</div>
-          <div><strong>Phone:</strong> {customer?.phone}</div>
-          <div><strong>Email:</strong> {customer?.email || '—'}</div>
-          <div><strong>Address:</strong> {customer?.address || '—'}</div>
+          <div><strong>Name:</strong> {customerName}</div>
+          <div><strong>Phone:</strong> {customerPhone}</div>
+          <div><strong>Email:</strong> {customerEmail}</div>
+          <div><strong>Address:</strong> {customerAddress}</div>
           {order.siteAddress && <div><strong>Site Address:</strong> {order.siteAddress}</div>}
         </div>
       </div>

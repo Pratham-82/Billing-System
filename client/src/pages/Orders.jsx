@@ -104,8 +104,8 @@ export default function Orders() {
                   <tr key={order._id}>
                     <td>{order.billNumber}</td>
                     <td>
-                      <div>{order.customer?.name}</div>
-                      <small style={{ color: 'var(--text-muted)' }}>{order.customer?.phone}</small>
+                      <div>{order.customer?.name || order.customerName || 'Deleted Customer'}</div>
+                      <small style={{ color: 'var(--text-muted)' }}>{order.customer?.phone || order.customerPhone || '—'}</small>
                     </td>
                     <td>{formatCurrency(order.grandTotal)}</td>
                     <td>

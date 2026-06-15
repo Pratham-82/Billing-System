@@ -1,6 +1,46 @@
 const Customer = require('../models/Customer');
 const Order = require('../models/Order');
 
+async function migrateCustomerDetailsToOrders() {
+  try {
+    const orders = await Order.find({
+      $or: [
+        { customerName: { $exists: false } },
+        { customerName: null }
+      ]
+    });
+    
+    if (orders.length > 0) {
+      console.log(`[Migration] Populating customer details for ${orders.length} orders...`);
+      let migratedCount = 0;
+      
+      for (const order of orders) {
+        if (order.customer) {
+          const customer = await Customer.findById(order.customer);
+          if (customer) {
+            order.customerName = customer.name;
+            order.customerPhone = customer.phone || '';
+            order.customerEmail = customer.email || '';
+            order.customerAddress = customer.address || '';
+            await order.save();
+            migratedCount++;
+          } else {
+            order.customerName = 'Deleted Customer';
+            order.customerPhone = '—';
+            order.customerEmail = '—';
+            order.customerAddress = '—';
+            await order.save();
+            migratedCount++;
+          }
+        }
+      }
+      console.log(`[Migration] Customer details migration completed successfully. Updated ${migratedCount} orders.`);
+    }
+  } catch (error) {
+    console.error('[Migration] Error during customer details migration:', error.message);
+  }
+}
+
 async function migratePaymentsToCustomer() {
   try {
     const customers = await Customer.find({});
@@ -59,4 +99,9 @@ async function migratePaymentsToCustomer() {
   }
 }
 
-module.exports = migratePaymentsToCustomer;
+async function runAllMigrations() {
+  await migratePaymentsToCustomer();
+  await migrateCustomerDetailsToOrders();
+}
+
+module.exports = runAllMigrations;

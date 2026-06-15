@@ -314,6 +314,10 @@ router.post('/', async (req, res) => {
     const order = await Order.create({
       billNumber,
       customer: customer._id,
+      customerName: customer.name,
+      customerPhone: customer.phone || '',
+      customerEmail: customer.email || '',
+      customerAddress: customer.address || '',
       items: processedItems,
       subtotal,
       discount: Number(discount) || 0,
@@ -478,6 +482,10 @@ router.put('/:id', async (req, res) => {
     const paymentDiff = amtPaidNew - amtPaidOld;
 
     orderDoc.customer = customer._id;
+    orderDoc.customerName = customer.name;
+    orderDoc.customerPhone = customer.phone || '';
+    orderDoc.customerEmail = customer.email || '';
+    orderDoc.customerAddress = customer.address || '';
     orderDoc.items = processedItems;
     orderDoc.subtotal = subtotal;
     orderDoc.discount = Number(discount) || 0;

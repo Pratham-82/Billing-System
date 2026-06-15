@@ -145,7 +145,7 @@ export default function Reports() {
     const orderRows = orders.map(order => [
       order.billNumber,
       formatDate(order.billDate || order.createdAt),
-      order.customer?.name || '—',
+      order.customer?.name || order.customerName || 'Deleted Customer',
       order.customer?.customerType || 'retail',
       getItemSummaryString(order.items),
       order.grandTotal,
@@ -285,9 +285,15 @@ export default function Reports() {
                     </td>
                     <td>{formatDate(order.billDate || order.createdAt)}</td>
                     <td>
-                      <Link to="/customers" style={{ fontWeight: '500' }}>
-                        {order.customer?.name || '—'}
-                      </Link>
+                      {order.customer ? (
+                        <Link to="/customers" style={{ fontWeight: '500' }}>
+                          {order.customer.name}
+                        </Link>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>
+                          {order.customerName || 'Deleted Customer'}
+                        </span>
+                      )}
                     </td>
                     <td style={{ textTransform: 'capitalize' }}>
                       {order.customer?.customerType || 'retail'}

@@ -111,7 +111,9 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
 
       {(() => {
         const currentBillTotal = order.grandTotal;
+        const currentAmountPaid = order.amountPaid || 0;
         const totalOutstanding = customerBalance !== undefined ? customerBalance : currentBillTotal;
+        const oldDues = customerBalance !== undefined ? totalOutstanding - (currentBillTotal - currentAmountPaid) : 0;
 
         return (
           <div className="totals">
@@ -125,12 +127,22 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
             </div>
             
             {customerBalance !== undefined && (
-              <div className="grand" style={{ borderTop: '2px double var(--border)', marginTop: '8px', paddingTop: '8px' }}>
-                <span>Account Balance Due</span>
-                <span className={totalOutstanding > 0 ? 'text-danger' : 'text-success'} style={{ fontWeight: 'bold' }}>
-                  {formatCurrency(totalOutstanding)}
-                </span>
-              </div>
+              <>
+                <div style={{ marginTop: '8px', borderTop: '1px dashed var(--border)', paddingTop: '8px' }}>
+                  <span>Balance Due</span>
+                  <span>{formatCurrency(oldDues)}</span>
+                </div>
+                <div>
+                  <span>Amount Paid</span>
+                  <span>{formatCurrency(currentAmountPaid)}</span>
+                </div>
+                <div className="grand" style={{ borderTop: '2px double var(--border)', marginTop: '8px', paddingTop: '8px' }}>
+                  <span>Account Balance Due</span>
+                  <span className={totalOutstanding > 0 ? 'text-danger' : 'text-success'} style={{ fontWeight: 'bold' }}>
+                    {formatCurrency(totalOutstanding)}
+                  </span>
+                </div>
+              </>
             )}
           </div>
         );

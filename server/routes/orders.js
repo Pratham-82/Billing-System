@@ -471,6 +471,16 @@ router.put('/:id', async (req, res) => {
     orderDoc.notes = notes?.trim() || '';
     orderDoc.siteAddress = customer.customerType === 'builder' ? (siteAddress?.trim() || '') : '';
 
+    if (billDate && !isNaN(new Date(billDate).getTime())) {
+      const incomingDateStr = new Date(billDate).toISOString().split('T')[0];
+      const existingDateStr = orderDoc.billDate && !isNaN(new Date(orderDoc.billDate).getTime())
+        ? new Date(orderDoc.billDate).toISOString().split('T')[0]
+        : '';
+      if (incomingDateStr !== existingDateStr) {
+        orderDoc.billDate = new Date(billDate);
+      }
+    }
+
     if (orderDoc.amountPaid !== payment.amountPaid || orderDoc.paymentStatus !== payment.paymentStatus) {
       if (orderDoc.amountPaid !== payment.amountPaid) {
         orderDoc.paymentLogs = payment.amountPaid > 0 ? [{ amount: payment.amountPaid, date: new Date() }] : [];

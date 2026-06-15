@@ -22,6 +22,7 @@ const customerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+customerSchema.index({ name: 1 });
 customerSchema.index({ phone: 1 });
 customerSchema.index({ name: 'text', phone: 'text', email: 'text' });
 

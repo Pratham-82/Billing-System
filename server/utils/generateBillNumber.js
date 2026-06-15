@@ -3,7 +3,7 @@ async function generateBillNumber(Order) {
   const prefix = `WB-${year}-`;
 
   const lastOrder = await Order.findOne({ billNumber: new RegExp(`^${prefix}`) })
-    .sort({ createdAt: -1 })
+    .sort({ billNumber: -1 })
     .select('billNumber');
 
   let nextNumber = 1;

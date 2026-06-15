@@ -233,14 +233,18 @@ export default function Customers() {
     e.preventDefault();
     setPaymentError('');
     setPaymentSuccess('');
-    const amt = Number(paymentInput);
+    const amt = Number(paymentInput) || 0;
     const disc = Number(discountInput) || 0;
-    if (isNaN(amt) || amt <= 0) {
+    if (isNaN(amt) || amt < 0) {
       setPaymentError('Please enter a valid payment amount.');
       return;
     }
     if (isNaN(disc) || disc < 0) {
       setPaymentError('Please enter a valid discount amount.');
+      return;
+    }
+    if (amt === 0 && disc === 0) {
+      setPaymentError('Please enter either a payment amount or a settlement discount.');
       return;
     }
     if (amt + disc > account.balanceDue) {
@@ -252,8 +256,10 @@ export default function Customers() {
       await api.recordCustomerPayment(customer._id, amt, disc);
       setPaymentInput('');
       setDiscountInput('');
-      if (disc > 0) {
+      if (amt > 0 && disc > 0) {
         setPaymentSuccess(`Successfully recorded payment of ${formatCurrency(amt)} with settlement discount of ${formatCurrency(disc)}!`);
+      } else if (disc > 0) {
+        setPaymentSuccess(`Successfully applied settlement discount of ${formatCurrency(disc)}!`);
       } else {
         setPaymentSuccess(`Successfully recorded payment of ${formatCurrency(amt)}!`);
       }
@@ -437,15 +443,14 @@ export default function Customers() {
                 <h3 style={{ fontSize: '1.1rem', marginBottom: 12 }}>Record Account Payment</h3>
                 <form onSubmit={handleCustomerPaymentSubmit} style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                   <div className="field" style={{ margin: 0, flex: 1, minWidth: '150px' }}>
-                    <label>Amount to Pay *</label>
+                    <label>Amount to Pay</label>
                     <input
                       type="number"
-                      min="1"
+                      min="0"
                       max={account.balanceDue - (Number(discountInput) || 0)}
                       value={paymentInput}
                       onChange={(e) => setPaymentInput(e.target.value)}
                       placeholder={`Max: ${account.balanceDue - (Number(discountInput) || 0)}`}
-                      required
                       style={{ padding: '8px 12px' }}
                     />
                   </div>

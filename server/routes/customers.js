@@ -149,11 +149,14 @@ router.post('/:id/payment', async (req, res) => {
     let paymentAmount = Number(req.body.amount);
     let discountAmount = Number(req.body.discount) || 0;
 
-    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+    if (isNaN(paymentAmount) || paymentAmount < 0) {
       return res.status(400).json({ message: 'Invalid payment amount' });
     }
     if (isNaN(discountAmount) || discountAmount < 0) {
       return res.status(400).json({ message: 'Invalid discount amount' });
+    }
+    if (paymentAmount === 0 && discountAmount === 0) {
+      return res.status(400).json({ message: 'Either payment amount or discount amount must be greater than zero' });
     }
 
     const customer = await Customer.findById(customerId);

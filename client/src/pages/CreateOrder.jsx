@@ -60,6 +60,7 @@ const emptyCustomer = {
   email: '',
   address: '',
   customerType: 'retail',
+  openingBalance: '',
 };
 
 export default function CreateOrder() {
@@ -383,15 +384,24 @@ export default function CreateOrder() {
               />
             </div>
             <div className="field">
-              <label>Phone *</label>
+              <label>Phone</label>
               <input
                 value={customerData.phone}
                 onChange={(e) => setCustomerData({ ...customerData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                required
                 pattern="[0-9]{10}"
                 title="Phone number must be exactly 10 digits"
                 maxLength={10}
                 placeholder="10-digit mobile number"
+              />
+            </div>
+            <div className="field">
+              <label>Opening Balance Due</label>
+              <input
+                type="number"
+                min="0"
+                value={customerData.openingBalance}
+                onChange={(e) => setCustomerData({ ...customerData, openingBalance: e.target.value })}
+                placeholder="0"
               />
             </div>
             <div className="field">

@@ -41,8 +41,11 @@ export default function Customers() {
     setEditError('');
     setEditSaving(true);
     try {
-      if (!editForm.name.trim() || !editForm.phone.trim()) {
-        throw new Error('Name and phone are required.');
+      if (!editForm.name.trim()) {
+        throw new Error('Name is required.');
+      }
+      if (editForm.phone && editForm.phone.length !== 10) {
+        throw new Error('Phone number must be exactly 10 digits.');
       }
       await api.updateCustomer(customer._id, editForm);
       setIsEditingCustomer(false);
@@ -118,8 +121,8 @@ export default function Customers() {
         const typeIdx = headers.findIndex(h => h.includes('type'));
         const balanceIdx = headers.findIndex(h => h.includes('balance') || h.includes('due') || h.includes('opening'));
 
-        if (nameIdx === -1 || phoneIdx === -1) {
-          throw new Error('Could not find required columns: "Name" and "Phone" (case-insensitive).');
+        if (nameIdx === -1) {
+          throw new Error('Could not find required column: "Name" (case-insensitive).');
         }
 
         const parsed = [];
@@ -128,11 +131,11 @@ export default function Customers() {
           if (!row || row.length === 0) continue;
           
           const name = row[nameIdx]?.toString().trim();
-          const phoneRaw = row[phoneIdx]?.toString().trim();
+          const phoneRaw = phoneIdx !== -1 ? row[phoneIdx]?.toString().trim() : '';
           
-          if (!name && !phoneRaw) continue;
+          if (!name) continue;
 
-          const phone = phoneRaw?.replace(/\D/g, '').slice(0, 10) || '';
+          const phone = phoneRaw ? phoneRaw.replace(/\D/g, '').slice(0, 10) : '';
           const email = emailIdx !== -1 ? row[emailIdx]?.toString().trim() || '' : '';
           const address = addressIdx !== -1 ? row[addressIdx]?.toString().trim() || '' : '';
           
@@ -540,11 +543,10 @@ export default function Customers() {
                 />
               </div>
               <div className="field">
-                <label>Phone *</label>
+                <label>Phone</label>
                 <input
                   value={editForm.phone}
                   onChange={(e) => setEditForm({ ...editForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                  required
                   pattern="[0-9]{10}"
                   title="Phone number must be exactly 10 digits"
                   maxLength={10}
@@ -638,7 +640,7 @@ export default function Customers() {
               Upload an Excel (.xlsx, .xls) or CSV file with the following column headers:
               <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
                 <li><strong>Name</strong> * (Required)</li>
-                <li><strong>Phone</strong> * (Required, 10-digit number)</li>
+                <li><strong>Phone</strong> (Optional, 10-digit number)</li>
                 <li><strong>Email</strong> (Optional)</li>
                 <li><strong>Address</strong> (Optional, billing address)</li>
                 <li><strong>Customer Type</strong> (Optional: retail, builder, shopkeeper, reference)</li>

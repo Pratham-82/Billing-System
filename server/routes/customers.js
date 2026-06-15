@@ -98,18 +98,19 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, phone, email, address, customerType } = req.body;
+    const { name, phone, email, address, customerType, openingBalance, balanceDue } = req.body;
 
-    if (!name?.trim() || !phone?.trim()) {
-      return res.status(400).json({ message: 'Name and phone are required' });
+    if (!name?.trim()) {
+      return res.status(400).json({ message: 'Name is required' });
     }
 
     const customer = await Customer.create({
       name: name.trim(),
-      phone: phone.trim(),
+      phone: phone?.trim() || '',
       email: email?.trim() || '',
       address: address?.trim() || '',
       customerType: customerType?.trim() || 'retail',
+      openingBalance: Number(openingBalance) || Number(balanceDue) || 0,
     });
 
     res.status(201).json(customer);
@@ -237,15 +238,18 @@ router.post('/bulk', async (req, res) => {
 
     for (const c of customers) {
       try {
-        if (!c.name?.trim() || !c.phone?.trim()) {
-          errors.push({ customer: c, error: 'Name and phone are required' });
+        if (!c.name?.trim()) {
+          errors.push({ customer: c, error: 'Name is required' });
           continue;
         }
 
-        const phoneClean = c.phone.toString().replace(/\D/g, '').slice(0, 10);
-        if (phoneClean.length !== 10) {
-          errors.push({ customer: c, error: 'Phone number must be exactly 10 digits' });
-          continue;
+        let phoneClean = '';
+        if (c.phone) {
+          phoneClean = c.phone.toString().replace(/\D/g, '').slice(0, 10);
+          if (phoneClean.length > 0 && phoneClean.length !== 10) {
+            errors.push({ customer: c, error: 'Phone number must be exactly 10 digits' });
+            continue;
+          }
         }
 
         const newCust = await Customer.create({

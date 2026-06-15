@@ -220,15 +220,16 @@ router.post('/', async (req, res) => {
         return res.status(404).json({ message: 'Customer not found' });
       }
     } else {
-      if (!customerData?.name?.trim() || !customerData?.phone?.trim()) {
-        return res.status(400).json({ message: 'Customer name and phone are required' });
+      if (!customerData?.name?.trim()) {
+        return res.status(400).json({ message: 'Customer name is required' });
       }
       customer = await Customer.create({
         name: customerData.name.trim(),
-        phone: customerData.phone.trim(),
+        phone: customerData.phone?.trim() || '',
         email: customerData.email?.trim() || '',
         address: customerData.address?.trim() || '',
         customerType: customerData.customerType?.trim() || 'retail',
+        openingBalance: Number(customerData.openingBalance) || Number(customerData.balanceDue) || 0,
       });
     }
 
@@ -371,15 +372,16 @@ router.put('/:id', async (req, res) => {
         return res.status(404).json({ message: 'Customer not found' });
       }
     } else {
-      if (!customerData?.name?.trim() || !customerData?.phone?.trim()) {
-        return res.status(400).json({ message: 'Customer name and phone are required' });
+      if (!customerData?.name?.trim()) {
+        return res.status(400).json({ message: 'Customer name is required' });
       }
       customer = await Customer.create({
         name: customerData.name.trim(),
-        phone: customerData.phone.trim(),
+        phone: customerData.phone?.trim() || '',
         email: customerData.email?.trim() || '',
         address: customerData.address?.trim() || '',
         customerType: customerData.customerType?.trim() || 'retail',
+        openingBalance: Number(customerData.openingBalance) || Number(customerData.balanceDue) || 0,
       });
     }
 

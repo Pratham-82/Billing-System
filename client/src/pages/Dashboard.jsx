@@ -13,7 +13,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Form states
-  const [customerForm, setCustomerForm] = useState({ name: '', phone: '', email: '', address: '', customerType: 'retail' });
+  const [customerForm, setCustomerForm] = useState({ name: '', phone: '', email: '', address: '', customerType: 'retail', openingBalance: '' });
   const [itemForm, setItemForm] = useState({ name: '', type: 'quantity', defaultPrice: '' });
   
   // Loading & error states
@@ -32,12 +32,19 @@ export default function Dashboard() {
     setError('');
     setLoading(true);
     try {
-      if (!customerForm.name.trim() || !customerForm.phone.trim()) {
-        throw new Error('Name and phone are required.');
+      if (!customerForm.name.trim()) {
+        throw new Error('Name is required.');
       }
-      const data = await api.createCustomer(customerForm);
+      if (customerForm.phone && customerForm.phone.length !== 10) {
+        throw new Error('Phone number must be exactly 10 digits.');
+      }
+      const payload = {
+        ...customerForm,
+        openingBalance: Number(customerForm.openingBalance) || 0
+      };
+      const data = await api.createCustomer(payload);
       triggerToast(`Customer "${data.name}" registered successfully!`);
-      setCustomerForm({ name: '', phone: '', email: '', address: '', customerType: 'retail' });
+      setCustomerForm({ name: '', phone: '', email: '', address: '', customerType: 'retail', openingBalance: '' });
       setActiveModal(null);
     } catch (err) {
       setError(err.message);
@@ -299,17 +306,26 @@ export default function Dashboard() {
                   />
                 </div>
                  <div className="field">
-                  <label>Phone *</label>
-                  <input
-                    value={customerForm.phone}
-                    onChange={(e) => setCustomerForm({ ...customerForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                    placeholder="e.g. 9876543210"
-                    required
-                    pattern="[0-9]{10}"
-                    title="Phone number must be exactly 10 digits"
-                    maxLength={10}
-                  />
-                </div>
+                   <label>Phone</label>
+                   <input
+                     value={customerForm.phone}
+                     onChange={(e) => setCustomerForm({ ...customerForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                     placeholder="e.g. 9876543210"
+                     pattern="[0-9]{10}"
+                     title="Phone number must be exactly 10 digits"
+                     maxLength={10}
+                   />
+                 </div>
+                 <div className="field">
+                   <label>Opening Balance Due</label>
+                   <input
+                     type="number"
+                     min="0"
+                     value={customerForm.openingBalance}
+                     onChange={(e) => setCustomerForm({ ...customerForm, openingBalance: e.target.value })}
+                     placeholder="0"
+                   />
+                 </div>
                 <div className="field">
                   <label>Customer Type *</label>
                   <select

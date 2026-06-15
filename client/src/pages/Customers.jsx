@@ -17,6 +17,7 @@ export default function Customers() {
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [paymentSuccess, setPaymentSuccess] = useState('');
+  const [activeTab, setActiveTab] = useState('bills');
 
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', phone: '', email: '', address: '', customerType: 'retail', openingBalance: '' });
@@ -489,65 +490,110 @@ export default function Customers() {
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', marginTop: 24 }}>
-              <div>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: 12 }}>Bills</h3>
-                {orders.length === 0 ? (
-                  <div className="empty-state">No bills for this customer</div>
-                ) : (
-                  <div style={{ display: 'grid', gap: 12 }}>
-                    {orders.map((order) => (
-                      <div key={order._id} className="item-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '16px' }}>
-                        <div>
-                          <strong>{order.billNumber}</strong>
-                          <div className="bill-meta">
-                            {new Date(order.createdAt).toLocaleDateString('en-IN')}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <small className="bill-meta" style={{ fontSize: '0.75rem', display: 'block', marginBottom: 2 }}>Bill Total</small>
-                          <strong style={{ fontSize: '1.1rem' }}>
-                            {formatCurrency(order.grandTotal)}
-                          </strong>
-                        </div>
-                        <div className="btn-row" style={{ margin: 0 }}>
-                          <Link to={`/bill/${order._id}`} className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '0.88rem' }}>
-                            View
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div style={{
+              display: 'flex',
+              gap: '24px',
+              marginTop: '24px',
+              borderBottom: '1px solid var(--border)',
+              marginBottom: '16px'
+            }}>
+              <button
+                type="button"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: activeTab === 'bills' ? '2px solid var(--accent)' : '2px solid transparent',
+                  color: activeTab === 'bills' ? 'var(--accent)' : 'var(--text-muted)',
+                  padding: '8px 4px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onClick={() => setActiveTab('bills')}
+              >
+                Bills
+              </button>
+              <button
+                type="button"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: activeTab === 'logs' ? '2px solid var(--accent)' : '2px solid transparent',
+                  color: activeTab === 'logs' ? 'var(--accent)' : 'var(--text-muted)',
+                  padding: '8px 4px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onClick={() => setActiveTab('logs')}
+              >
+                Payment Logs
+              </button>
+            </div>
 
-              <div>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: 12 }}>Payment Logs</h3>
-                {!customer.paymentLogs || customer.paymentLogs.length === 0 ? (
-                  <div className="empty-state">No payments recorded yet</div>
-                ) : (
-                  <div style={{ display: 'grid', gap: 12 }}>
-                    {customer.paymentLogs.map((log, index) => (
-                      <div key={index} className="item-card" style={{ padding: '16px', background: 'var(--surface-alt)', border: '1px solid var(--border)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <div>
+              {activeTab === 'bills' && (
+                <div>
+                  {orders.length === 0 ? (
+                    <div className="empty-state">No bills for this customer</div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: 12 }}>
+                      {orders.map((order) => (
+                        <div key={order._id} className="item-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '16px' }}>
                           <div>
-                            <strong className="text-success">+{formatCurrency(log.amount)}</strong>
-                            {log.discount > 0 && (
-                              <span style={{ fontSize: '0.8rem', color: 'var(--accent)', marginLeft: 8 }}>
-                                (Discount: {formatCurrency(log.discount)})
-                              </span>
-                            )}
-                            <div className="bill-meta" style={{ marginTop: 4 }}>{log.notes || 'Payment'}</div>
+                            <strong>{order.billNumber}</strong>
+                            <div className="bill-meta">
+                              {new Date(order.createdAt).toLocaleDateString('en-IN')}
+                            </div>
                           </div>
-                          <div className="bill-meta">
-                            {new Date(log.date).toLocaleDateString('en-IN')}
+                          <div style={{ textAlign: 'right' }}>
+                            <small className="bill-meta" style={{ fontSize: '0.75rem', display: 'block', marginBottom: 2 }}>Bill Total</small>
+                            <strong style={{ fontSize: '1.1rem' }}>
+                              {formatCurrency(order.grandTotal)}
+                            </strong>
+                          </div>
+                          <div className="btn-row" style={{ margin: 0 }}>
+                            <Link to={`/bill/${order._id}`} className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '0.88rem' }}>
+                              View
+                            </Link>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'logs' && (
+                <div>
+                  {!customer.paymentLogs || customer.paymentLogs.length === 0 ? (
+                    <div className="empty-state">No payments recorded yet</div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: 12 }}>
+                      {customer.paymentLogs.map((log, index) => (
+                        <div key={index} className="item-card" style={{ padding: '16px', background: 'var(--surface-alt)', border: '1px solid var(--border)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                            <div>
+                              <strong className="text-success">+{formatCurrency(log.amount)}</strong>
+                              {log.discount > 0 && (
+                                <span style={{ fontSize: '0.8rem', color: 'var(--accent)', marginLeft: 8 }}>
+                                  (Discount: {formatCurrency(log.discount)})
+                                </span>
+                              )}
+                              <div className="bill-meta" style={{ marginTop: 4 }}>{log.notes || 'Payment'}</div>
+                            </div>
+                            <div className="bill-meta">
+                              {new Date(log.date).toLocaleDateString('en-IN')}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </>
         )}

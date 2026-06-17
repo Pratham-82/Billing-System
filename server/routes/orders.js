@@ -532,4 +532,36 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+router.delete('/:id', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (order.customer) {
+      const customer = await Customer.findById(order.customer);
+      if (customer) {
+        const amtPaid = order.amountPaid || 0;
+        if (amtPaid > 0) {
+          customer.totalPaid = Math.max(0, (customer.totalPaid || 0) - amtPaid);
+        }
+
+        if (customer.paymentLogs && customer.paymentLogs.length > 0) {
+          customer.paymentLogs = customer.paymentLogs.filter(log => {
+            const notes = log.notes || '';
+            return !notes.includes(`#${order.billNumber}`);
+          });
+        }
+        await customer.save();
+      }
+    }
+
+    await Order.findByIdAndDelete(order._id);
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

@@ -1,15 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import Bill from '../components/Bill';
 
 
 export default function BillView() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [customerAccount, setCustomerAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  async function handleDelete() {
+    if (window.confirm(`Are you sure you want to delete this bill (${order?.billNumber})?`)) {
+      try {
+        await api.deleteOrder(order._id);
+        navigate('/orders');
+      } catch (err) {
+        setError(err.message || 'Failed to delete bill');
+      }
+    }
+  }
 
   async function loadData(showLoading = true) {
     if (showLoading) setLoading(true);
@@ -89,6 +101,13 @@ export default function BillView() {
         <Link to={`/edit-bill/${order._id}`} className="btn btn-secondary">
           Edit Bill
         </Link>
+        <button
+          type="button"
+          className="btn btn-danger"
+          onClick={handleDelete}
+        >
+          Delete Bill
+        </button>
       </div>
 
       {error && <div className="alert alert-error no-print">{error}</div>}

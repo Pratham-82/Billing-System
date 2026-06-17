@@ -67,6 +67,9 @@ export const api = {
   updateOrder: (id, data) =>
     request(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
+  deleteOrder: (id) =>
+    request(`/orders/${id}`, { method: 'DELETE' }),
+
   updateOrderPayment: (id, amountPaid) =>
     request(`/orders/${id}/payment`, {
       method: 'PATCH',

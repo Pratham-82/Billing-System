@@ -114,35 +114,45 @@ export default function Reports() {
     const grouped = {};
     items.forEach(item => {
       const name = (item.wallpaperName || 'Unknown').trim();
-      const type = item.type || 'quantity';
+      const rawType = item.type || 'quantity';
+      const type = (rawType === 'sqft' || rawType === 'custom') ? 'sqft' : rawType;
       const unit = item.measurementUnit || 'in';
       const h = item.height || item.heightFt || 0;
       const w = item.width || item.widthFt || 0;
       const runFt = item.runningFt || 0;
-      const key = `${name}|${type}|${unit}|${h}|${w}|${runFt}`;
-      
+      const qty = Number(item.quantity) || 1;
+
+      const key = `${name}|${type}`;
       if (!grouped[key]) {
         grouped[key] = {
           wallpaperName: name,
           type: type,
-          runningFt: runFt,
+          runningFt: 0,
           quantity: 0,
           areaSqFt: 0
         };
       }
-      const qty = Number(item.quantity) || 1;
       grouped[key].quantity += qty;
-      const singleArea = item.areaSqFt || (unit === 'in' ? (h / 12) * (w / 12) : h * w);
-      grouped[key].areaSqFt += singleArea * qty;
+      if (type === 'sqft') {
+        const singleArea = item.areaSqFt || (unit === 'in' ? (h / 12) * (w / 12) : h * w);
+        grouped[key].areaSqFt += singleArea * qty;
+      } else if (type === 'running') {
+        grouped[key].runningFt += runFt * qty;
+      }
     });
 
     return Object.values(grouped).map(group => {
       const qty = group.quantity;
-      if (group.type === 'sqft' || group.type === 'custom') {
-        const singleArea = group.areaSqFt / qty;
-        return `${group.wallpaperName} (${qty}x ${singleArea.toFixed(1)} sq ft)`;
+      if (group.type === 'sqft') {
+        if (qty > 1) {
+          return `${group.wallpaperName} (${qty}x, total ${group.areaSqFt.toFixed(1)} sq ft)`;
+        }
+        return `${group.wallpaperName} (1x ${group.areaSqFt.toFixed(1)} sq ft)`;
       } else if (group.type === 'running') {
-        return `${group.wallpaperName} (${qty}x ${group.runningFt} ft)`;
+        if (qty > 1) {
+          return `${group.wallpaperName} (${qty}x, total ${group.runningFt.toFixed(1)} ft)`;
+        }
+        return `${group.wallpaperName} (1x ${group.runningFt.toFixed(1)} ft)`;
       } else {
         return `${group.wallpaperName} (x${qty})`;
       }

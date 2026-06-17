@@ -103,12 +103,12 @@ export default function Orders() {
           billElements.forEach(el => el.classList.add('pdf-mode'));
 
           const opt = {
-            margin:       10,
+            margin:       0,
             filename:     `bills_export_${new Date().toISOString().split('T')[0]}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
-            pagebreak:    { mode: ['css', 'legacy'], avoid: '.bill', after: '.pdf-page-break' }
+            pagebreak:    { mode: ['css', 'legacy'] }
           };
 
           window.html2pdf()
@@ -168,7 +168,7 @@ export default function Orders() {
                 contentDiv.appendChild(clonedBill);
 
                 const opt = {
-                  margin:       10,
+                  margin:       0,
                   filename:     `${order.billNumber}.pdf`,
                   image:        { type: 'jpeg', quality: 0.98 },
                   html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
@@ -465,19 +465,18 @@ export default function Orders() {
           </div>
           <div id="pdf-batch-contents" style={{ background: '#ffffff', width: '100%' }}>
             {pdfOrders.map((order, idx) => (
-              <div 
-                key={order._id} 
-                id={`pdf-single-bill-${idx}`}
-                className="pdf-page-break" 
-                style={{ 
-                  pageBreakAfter: 'always', 
-                  breakAfter: 'page', 
-                  background: '#ffffff', 
-                  width: '100%',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <Bill order={order} customerBalance={pdfBalances[order.customer?._id]} />
+              <div key={order._id}>
+                <div 
+                  id={`pdf-single-bill-${idx}`}
+                  style={{ 
+                    background: '#ffffff', 
+                    width: '100%',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <Bill order={order} customerBalance={pdfBalances[order.customer?._id]} />
+                </div>
+                {idx < pdfOrders.length - 1 && <div className="html2pdf__page-break" />}
               </div>
             ))}
           </div>

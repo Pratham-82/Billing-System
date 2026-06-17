@@ -256,7 +256,18 @@ export default function Reports() {
 
       {/* Orders Breakdown */}
       <div className="card" style={{ padding: '24px' }}>
-        <h3 className="section-title" style={{ marginBottom: '20px' }}>Orders Breakdown</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <h3 className="section-title" style={{ margin: 0 }}>Orders Breakdown</h3>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={exportToExcel}
+            disabled={orders.length === 0}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '0.85rem', marginTop: 0 }}
+          >
+            📥 Export to Excel
+          </button>
+        </div>
         
         {loading ? (
           <div className="empty-state">Loading report data...</div>

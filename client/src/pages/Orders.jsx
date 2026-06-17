@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { formatCurrency } from '../utils/format';
+import Bill from '../components/Bill';
 
 function getOrderTotalSqFt(order) {
   if (!order || !order.items || !Array.isArray(order.items)) return 0;
@@ -27,6 +28,161 @@ export default function Orders() {
   const [error, setError] = useState('');
   const [customers, setCustomers] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfOrders, setPdfOrders] = useState([]);
+  const [pdfBalances, setPdfBalances] = useState({});
+
+  // Reset selection when search criteria changes
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [search, selectedCustomerId, startDate, endDate]);
+
+  const toggleSelectOrder = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const visibleActiveOrders = orders.filter(o => !o.isDeleted);
+    const allSelected = visibleActiveOrders.length > 0 && visibleActiveOrders.every(o => selectedIds.has(o._id));
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      visibleActiveOrders.forEach(o => {
+        if (allSelected) {
+          next.delete(o._id);
+        } else {
+          next.add(o._id);
+        }
+      });
+      return next;
+    });
+  };
+
+  const downloadSelectedPDFs = async (consolidated = true) => {
+    if (selectedIds.size === 0) return;
+    setIsGeneratingPDF(true);
+    try {
+      const selectedOrders = orders.filter(o => selectedIds.has(o._id));
+      
+      // Fetch customer balances in parallel
+      const customerIds = [...new Set(selectedOrders.map(o => o.customer?._id).filter(Boolean))];
+      const balances = {};
+      await Promise.all(customerIds.map(async (id) => {
+        try {
+          const accountData = await api.getCustomerAccount(id);
+          balances[id] = accountData.account.balanceDue;
+        } catch (e) {
+          console.error('Failed to load balance for customer', id, e);
+        }
+      }));
+
+      setPdfBalances(balances);
+      setPdfOrders(selectedOrders);
+
+      // Wait for state rendering in the DOM
+      setTimeout(() => {
+        if (consolidated) {
+          const container = document.getElementById('pdf-batch-container');
+          if (!container) {
+            setIsGeneratingPDF(false);
+            return;
+          }
+
+          // Add pdf-mode to each bill
+          const billElements = container.querySelectorAll('.bill');
+          billElements.forEach(el => el.classList.add('pdf-mode'));
+
+          const opt = {
+            margin:       10,
+            filename:     `bills_export_${new Date().toISOString().split('T')[0]}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
+            pagebreak:    { mode: 'css', after: '.pdf-page-break' }
+          };
+
+          window.html2pdf()
+            .from(container)
+            .set(opt)
+            .save()
+            .then(() => {
+              billElements.forEach(el => el.classList.remove('pdf-mode'));
+              setIsGeneratingPDF(false);
+              setPdfOrders([]);
+            })
+            .catch(err => {
+              console.error(err);
+              billElements.forEach(el => el.classList.remove('pdf-mode'));
+              setIsGeneratingPDF(false);
+              setPdfOrders([]);
+            });
+        } else {
+          // Download individual files
+          const runDownloads = async () => {
+            for (let i = 0; i < selectedOrders.length; i++) {
+              const order = selectedOrders[i];
+              const tempDiv = document.createElement('div');
+              tempDiv.style.position = 'absolute';
+              tempDiv.style.left = '-9999px';
+              tempDiv.style.top = '-9999px';
+              document.body.appendChild(tempDiv);
+              
+              const renderedBill = document.getElementById(`pdf-single-bill-${i}`);
+              if (renderedBill) {
+                const clonedBill = renderedBill.cloneNode(true);
+                clonedBill.classList.add('pdf-mode');
+                tempDiv.appendChild(clonedBill);
+
+                const opt = {
+                  margin:       10,
+                  filename:     `${order.billNumber}.pdf`,
+                  image:        { type: 'jpeg', quality: 0.98 },
+                  html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+                  jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                };
+
+                await new Promise((resolve) => {
+                  window.html2pdf()
+                    .from(tempDiv)
+                    .set(opt)
+                    .save()
+                    .then(() => {
+                      document.body.removeChild(tempDiv);
+                      resolve();
+                    })
+                    .catch(err => {
+                      console.error(err);
+                      document.body.removeChild(tempDiv);
+                      resolve();
+                    });
+                });
+
+                await new Promise(resolve => setTimeout(resolve, 400));
+              }
+            }
+          };
+
+          runDownloads().finally(() => {
+            setIsGeneratingPDF(false);
+            setPdfOrders([]);
+          });
+        }
+      }, 300);
+
+    } catch (err) {
+      alert(err.message || 'Failed to generate PDF files');
+      setIsGeneratingPDF(false);
+    }
+  };
 
   useEffect(() => {
     const loadCustomers = async () => {
@@ -134,6 +290,45 @@ export default function Orders() {
 
       {error && <div className="alert alert-error">{error}</div>}
 
+      {selectedIds.size > 0 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 18px',
+          background: 'var(--surface-alt)',
+          border: '1px solid var(--border)',
+          borderRadius: '12px',
+          marginBottom: '16px',
+          flexWrap: 'wrap',
+          gap: '10px'
+        }}>
+          <span style={{ fontWeight: 600 }}>
+            Selected {selectedIds.size} {selectedIds.size === 1 ? 'bill' : 'bills'}
+          </span>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => downloadSelectedPDFs(true)}
+              disabled={isGeneratingPDF}
+              style={{ padding: '8px 16px', fontSize: '0.88rem', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              📄 {isGeneratingPDF ? 'Generating...' : 'Download Single PDF (All Bills)'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => downloadSelectedPDFs(false)}
+              disabled={isGeneratingPDF}
+              style={{ padding: '8px 16px', fontSize: '0.88rem', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              🗂️ {isGeneratingPDF ? 'Generating...' : 'Download Separate PDFs'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="empty-state">Loading orders...</div>
       ) : orders.length === 0 ? (
@@ -143,6 +338,13 @@ export default function Orders() {
           <table>
             <thead>
               <tr>
+                <th style={{ width: '40px', textAlign: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={orders.length > 0 && orders.filter(o => !o.isDeleted).every(o => selectedIds.has(o._id))}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th>Bill No</th>
                 <th>Customer</th>
                 <th>Total Area</th>
@@ -155,6 +357,14 @@ export default function Orders() {
               {orders.map((order) => {
                 return (
                   <tr key={order._id} style={order.isDeleted ? { opacity: 0.6 } : {}}>
+                    <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(order._id)}
+                        onChange={() => toggleSelectOrder(order._id)}
+                        disabled={order.isDeleted}
+                      />
+                    </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span>{order.billNumber}</span>
@@ -199,7 +409,6 @@ export default function Orders() {
                         <Link to={`/bill/${order._id}`} className="btn btn-primary">
                           View Bill
                         </Link>
-
                       </div>
                     </td>
                   </tr>
@@ -207,6 +416,29 @@ export default function Orders() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {pdfOrders.length > 0 && (
+        <div id="pdf-batch-container" style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          {pdfOrders.map((order, idx) => (
+            <div 
+              key={order._id} 
+              id={`pdf-single-bill-${idx}`}
+              className="pdf-page-break" 
+              style={{ 
+                pageBreakAfter: 'always', 
+                breakAfter: 'page', 
+                background: '#ffffff', 
+                padding: '20px',
+                width: '297mm',
+                minHeight: '210mm',
+                boxSizing: 'border-box'
+              }}
+            >
+              <Bill order={order} customerBalance={pdfBalances[order.customer?._id]} />
+            </div>
+          ))}
         </div>
       )}
     </div>

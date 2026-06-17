@@ -59,7 +59,6 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
         <table>
           <thead>
             <tr>
-              <th>#</th>
               <th>Item</th>
               <th>Details</th>
               <th>Amount</th>
@@ -95,7 +94,6 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
 
               return (
                 <tr key={index}>
-                  <td>{index + 1}</td>
                   <td>
                     <div>{isDuplicate ? '' : item.wallpaperName}</div>
                     {item.customization && (

@@ -140,6 +140,7 @@ export default function Orders() {
               tempDiv.style.height = '100vh';
               tempDiv.style.zIndex = '99999';
               tempDiv.style.background = '#ffffff';
+              tempDiv.style.overflowY = 'auto';
               
               const loaderHeader = document.createElement('div');
               loaderHeader.style.position = 'fixed';
@@ -159,13 +160,10 @@ export default function Orders() {
               tempDiv.appendChild(loaderHeader);
 
               const contentDiv = document.createElement('div');
-              contentDiv.style.position = 'absolute';
-              contentDiv.style.top = '0';
-              contentDiv.style.left = '0';
               contentDiv.style.width = '1120px';
+              contentDiv.style.margin = '90px auto 0 auto';
               contentDiv.style.padding = '0';
               contentDiv.style.background = '#ffffff';
-              contentDiv.style.zIndex = '99999';
               tempDiv.appendChild(contentDiv);
               
               document.body.appendChild(tempDiv);
@@ -465,6 +463,7 @@ export default function Orders() {
             left: 0, 
             width: '100vw', 
             height: '100vh', 
+            overflowY: 'auto',
             background: '#ffffff', 
             zIndex: 99999
           }}
@@ -472,7 +471,14 @@ export default function Orders() {
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', textAlign: 'center', padding: '24px', background: 'linear-gradient(135deg, var(--accent), var(--accent-hover, #a36f4c))', color: '#ffffff', fontSize: '1.2rem', fontWeight: '600', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)', letterSpacing: '0.5px', zIndex: 100000 }}>
             ⏳ Generating Batch PDF... Please wait.
           </div>
-          <div id="pdf-batch-contents" style={{ position: 'absolute', top: 0, left: 0, width: '100%', background: '#ffffff', zIndex: 99999 }}>
+          <div 
+            id="pdf-batch-contents" 
+            style={{ 
+              background: '#ffffff', 
+              width: '1120px', 
+              margin: '90px auto 0 auto'
+            }}
+          >
             {pdfOrders.map((order, idx) => (
               <div key={order._id}>
                 <div 

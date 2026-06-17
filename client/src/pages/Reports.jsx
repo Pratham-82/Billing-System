@@ -111,14 +111,40 @@ export default function Reports() {
 
   const getItemSummaryString = (items) => {
     if (!items || items.length === 0) return '—';
-    return items.map(item => {
-      if (item.type === 'sqft' || item.type === 'custom') {
-        const area = item.areaSqFt ? item.areaSqFt.toFixed(1) : '0';
-        return `${item.wallpaperName} (${item.quantity}x ${area} sq ft)`;
-      } else if (item.type === 'running') {
-        return `${item.wallpaperName} (${item.quantity}x ${item.runningFt || 0} ft)`;
+    const grouped = {};
+    items.forEach(item => {
+      const name = (item.wallpaperName || 'Unknown').trim();
+      const type = item.type || 'quantity';
+      const unit = item.measurementUnit || 'in';
+      const h = item.height || item.heightFt || 0;
+      const w = item.width || item.widthFt || 0;
+      const runFt = item.runningFt || 0;
+      const key = `${name}|${type}|${unit}|${h}|${w}|${runFt}`;
+      
+      if (!grouped[key]) {
+        grouped[key] = {
+          wallpaperName: name,
+          type: type,
+          runningFt: runFt,
+          quantity: 0,
+          areaSqFt: 0
+        };
+      }
+      const qty = Number(item.quantity) || 1;
+      grouped[key].quantity += qty;
+      const singleArea = item.areaSqFt || (unit === 'in' ? (h / 12) * (w / 12) : h * w);
+      grouped[key].areaSqFt += singleArea * qty;
+    });
+
+    return Object.values(grouped).map(group => {
+      const qty = group.quantity;
+      if (group.type === 'sqft' || group.type === 'custom') {
+        const singleArea = group.areaSqFt / qty;
+        return `${group.wallpaperName} (${qty}x ${singleArea.toFixed(1)} sq ft)`;
+      } else if (group.type === 'running') {
+        return `${group.wallpaperName} (${qty}x ${group.runningFt} ft)`;
       } else {
-        return `${item.wallpaperName} (x${item.quantity})`;
+        return `${group.wallpaperName} (x${qty})`;
       }
     }).join(', ');
   };

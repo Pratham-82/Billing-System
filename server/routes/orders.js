@@ -162,7 +162,7 @@ router.get('/report', async (req, res) => {
       summary: {
         totalSale,
         totalOrders,
-        totalSqFt: Number(totalSqFt.toFixed(2)),
+        totalSqFt: Math.round(totalSqFt),
         totalRolls,
         totalRunningFt: Number(totalRunningFt.toFixed(2))
       },

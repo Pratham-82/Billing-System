@@ -144,15 +144,9 @@ export default function Reports() {
     return Object.values(grouped).map(group => {
       const qty = group.quantity;
       if (group.type === 'sqft') {
-        if (qty > 1) {
-          return `${group.wallpaperName} (${qty}x, total ${group.areaSqFt.toFixed(1)} sq ft)`;
-        }
-        return `${group.wallpaperName} (1x ${group.areaSqFt.toFixed(1)} sq ft)`;
+        return `${group.wallpaperName} (${Math.round(group.areaSqFt)} sq ft)`;
       } else if (group.type === 'running') {
-        if (qty > 1) {
-          return `${group.wallpaperName} (${qty}x, total ${group.runningFt.toFixed(1)} ft)`;
-        }
-        return `${group.wallpaperName} (1x ${group.runningFt.toFixed(1)} ft)`;
+        return `${group.wallpaperName} (${Math.round(group.runningFt)} ft)`;
       } else {
         return `${group.wallpaperName} (x${qty})`;
       }
@@ -170,7 +164,7 @@ export default function Reports() {
       ['Metric', 'Value'],
       ['Total Sales (INR)', summary.totalSale],
       ['Total Orders', summary.totalOrders],
-      ['Total Area (Sq Ft)', summary.totalSqFt],
+      ['Total Area (Sq Ft)', Math.round(summary.totalSqFt)],
       ['Total Rolls / Qty', summary.totalRolls],
       ['Total Running Feet', summary.totalRunningFt]
     ];
@@ -481,7 +475,7 @@ export default function Reports() {
         </div>
         <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '6px', borderLeft: '4px solid #4a90e2', marginTop: 0 }}>
           <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Area (Sq Ft)</span>
-          <strong style={{ fontSize: '1.4rem', color: 'var(--accent)' }}>{summary.totalSqFt.toLocaleString()} sq ft</strong>
+          <strong style={{ fontSize: '1.4rem', color: 'var(--accent)' }}>{Math.round(summary.totalSqFt).toLocaleString()} sq ft</strong>
         </div>
         <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '6px', borderLeft: '4px solid #dfa23b', marginTop: 0 }}>
           <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Rolls / Qty</span>

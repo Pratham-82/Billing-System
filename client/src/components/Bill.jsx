@@ -68,6 +68,31 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
           <tbody>
             {order.items.map((item, index) => {
               const isDuplicate = index > 0 && item.wallpaperName?.trim() === order.items[index - 1].wallpaperName?.trim();
+              
+              // consecutive run total area calculation
+              const isLastOfRun = index === order.items.length - 1 || 
+                                  order.items[index + 1].wallpaperName?.trim() !== item.wallpaperName?.trim();
+              
+              let runItems = [];
+              let runIndex = index;
+              while (runIndex >= 0 && order.items[runIndex].wallpaperName?.trim() === item.wallpaperName?.trim()) {
+                runItems.push(order.items[runIndex]);
+                runIndex--;
+              }
+              
+              const showRunTotal = isLastOfRun && runItems.length > 1;
+              const totalRunArea = showRunTotal ? runItems.reduce((sum, runItem) => {
+                if (runItem.type === 'sqft' || runItem.type === 'custom') {
+                  const qty = runItem.quantity || 1;
+                  const unit = runItem.measurementUnit || 'in';
+                  const h = runItem.height || runItem.heightFt || 0;
+                  const w = runItem.width || runItem.widthFt || 0;
+                  const area = runItem.areaSqFt || (unit === 'in' ? (h / 12) * (w / 12) : h * w);
+                  return sum + (area * qty);
+                }
+                return sum;
+              }, 0) : 0;
+
               return (
                 <tr key={index}>
                   <td>{index + 1}</td>
@@ -84,6 +109,8 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
                       const t = item.type;
                       const qty = item.quantity || 1;
                       const priceStr = ` @ ${formatCurrency(item.pricePerRoll)}`;
+                      let detailText = '';
+
                       if (t === 'sqft' || t === 'custom') {
                         const unit = item.measurementUnit || 'in';
                         const h = item.height || item.heightFt || 0;
@@ -91,18 +118,37 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
                         const singleArea = item.areaSqFt || (unit === 'in' ? (h / 12) * (w / 12) : h * w);
                         const totalArea = singleArea * qty;
 
-                        return qty > 1
+                        detailText = qty > 1
                           ? `${qty} pcs × ${w}X${h} = ${Math.round(totalArea)} sq ft${priceStr}`
                           : `${w}X${h} = ${Math.round(singleArea)} sq ft${priceStr}`;
                       } else if (t === 'running') {
                         const runningFt = item.runningFt || 0;
                         const totalLength = runningFt * qty;
-                        return qty > 1
+                        detailText = qty > 1
                           ? `${qty} pcs × ${runningFt} ft = ${totalLength.toFixed(2)} ft${priceStr}`
                           : `${runningFt} ft${priceStr}`;
                       } else {
-                        return `${qty}${priceStr}`;
+                        detailText = `${qty}${priceStr}`;
                       }
+
+                      return (
+                        <div>
+                          <div>{detailText}</div>
+                          {showRunTotal && totalRunArea > 0 && (
+                            <div style={{ 
+                              marginTop: '4px', 
+                              fontWeight: '600', 
+                              color: 'var(--text-muted)',
+                              fontSize: '0.82rem',
+                              borderTop: '1px dashed var(--border)',
+                              paddingTop: '2px',
+                              display: 'inline-block'
+                            }}>
+                              Total {item.wallpaperName} Area: {Math.round(totalRunArea)} sq ft
+                            </div>
+                          )}
+                        </div>
+                      );
                     })()}
                   </td>
                   <td>{formatCurrency(item.lineTotal)}</td>

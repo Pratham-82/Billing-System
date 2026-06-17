@@ -142,7 +142,7 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
                               paddingTop: '2px',
                               display: 'inline-block'
                             }}>
-                              Total {item.wallpaperName} Area: {Math.round(totalRunArea)} sq ft
+                              T.A = {Math.round(totalRunArea)} sq ft
                             </div>
                           )}
                         </div>

@@ -165,8 +165,12 @@ export default function Reports() {
       ['Total Running Feet', summary.totalRunningFt]
     ];
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    wsSummary['!cols'] = [
+      { wch: 30 },
+      { wch: 20 }
+    ];
 
-    // Sheet 2: Order Details (Flat Table of Items with Order Metadata)
+    // Sheet 2: Order Details (Grouped Tabular Layout)
     const orderHeaders = [[
       'Bill Number',
       'Date',
@@ -179,17 +183,13 @@ export default function Reports() {
       'Dimensions',
       'Rate (INR)',
       'Rounded Area/Length',
-      'Item Total (INR)',
-      'Bill Subtotal (INR)',
-      'Bill Discount (INR)',
-      'Bill Tax (INR)',
-      'Bill Grand Total (INR)'
+      'Item Total (INR)'
     ]];
 
     const orderRows = [];
     orders.forEach(order => {
       const items = order.items && order.items.length > 0 ? order.items : [{}];
-      items.forEach(item => {
+      items.forEach((item, index) => {
         let dims = '—';
         let roundedMeasure = '—';
         
@@ -209,28 +209,65 @@ export default function Reports() {
           roundedMeasure = `${item.quantity || 1} qty`;
         }
 
+        const isFirst = index === 0;
+
         orderRows.push([
-          order.billNumber || '—',
-          formatDate(order.billDate || order.createdAt),
-          order.customer?.name || order.customerName || 'Deleted Customer',
-          order.customer?.phone || order.customerPhone || '—',
-          order.siteAddress || '—',
+          isFirst ? (order.billNumber || '—') : '',
+          isFirst ? formatDate(order.billDate || order.createdAt) : '',
+          isFirst ? (order.customer?.name || order.customerName || 'Deleted Customer') : '',
+          isFirst ? (order.customer?.phone || order.customerPhone || '—') : '',
+          isFirst ? (order.siteAddress || '—') : '',
           item.wallpaperName || '—',
           item.type || '—',
           item.quantity !== undefined ? item.quantity : '—',
           dims,
           item.pricePerRoll !== undefined ? item.pricePerRoll : '—',
           roundedMeasure,
-          item.lineTotal !== undefined ? item.lineTotal : '—',
-          order.subtotal || 0,
-          order.discount || 0,
-          order.tax || 0,
-          order.grandTotal || 0
+          item.lineTotal !== undefined ? item.lineTotal : '—'
         ]);
       });
+
+      // Add summary totals for this order
+      orderRows.push([
+        '', '', '', '', '', '', '', '', '',
+        'Subtotal:', '', order.subtotal || 0
+      ]);
+      if (order.discount > 0) {
+        orderRows.push([
+          '', '', '', '', '', '', '', '', '',
+          'Discount:', '', -order.discount
+        ]);
+      }
+      if (order.tax > 0) {
+        orderRows.push([
+          '', '', '', '', '', '', '', '', '',
+          'Tax:', '', order.tax
+        ]);
+      }
+      orderRows.push([
+        '', '', '', '', '', '', '', '', '',
+        'Grand Total:', '', order.grandTotal || 0
+      ]);
+
+      // Add a blank separator row
+      orderRows.push(['', '', '', '', '', '', '', '', '', '', '', '']);
     });
 
     const wsOrders = XLSX.utils.aoa_to_sheet([...orderHeaders, ...orderRows]);
+
+    // Calculate maximum lengths for column auto-fitting
+    const maxCols = orderHeaders[0].map(h => h.length);
+    orderRows.forEach(row => {
+      row.forEach((val, i) => {
+        if (i < maxCols.length) {
+          const len = val !== null && val !== undefined ? val.toString().length : 0;
+          if (len > maxCols[i]) {
+            maxCols[i] = len;
+          }
+        }
+      });
+    });
+    wsOrders['!cols'] = maxCols.map(w => ({ wch: Math.min(45, Math.max(w + 3, 10)) }));
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, wsSummary, 'Summary');

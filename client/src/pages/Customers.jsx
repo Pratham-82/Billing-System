@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import * as XLSXStyle from 'xlsx-js-style';
 import { api } from '../api';
 import { formatCurrency } from '../utils/format';
 
@@ -105,6 +106,183 @@ export default function Customers() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers Template');
     XLSX.writeFile(workbook, 'customers_import_template.xlsx');
+  };
+
+  const [exportingExcel, setExportingExcel] = useState(false);
+
+  const exportCustomersToExcel = async () => {
+    setExportingExcel(true);
+    try {
+      const data = await api.getCustomers(search, typeFilter, true);
+      
+      const titleRow = ['Speaking Wall Interio - Customer Accounts Report'];
+      const metadataRow = [`Generated on: ${new Date().toLocaleDateString('en-IN')} | Search: "${search || 'None'}" | Type: ${typeFilter || 'All'}`];
+      
+      const headers = [
+        'Name',
+        'Phone',
+        'Email',
+        'Address',
+        'Customer Type',
+        'Opening Balance (INR)',
+        'Total Billed (INR)',
+        'Total Paid (INR)',
+        'Total Discount (INR)',
+        'Outstanding Balance (INR)'
+      ];
+
+      const rows = data.map(c => [
+        c.name || '',
+        c.phone || '',
+        c.email || '',
+        c.address || '',
+        c.customerType || 'retail',
+        c.openingBalance || 0,
+        c.totalBilled || 0,
+        c.totalPaid || 0,
+        c.totalDiscount || 0,
+        c.balanceDue || 0
+      ]);
+
+      const totals = {
+        openingBalance: data.reduce((sum, c) => sum + (c.openingBalance || 0), 0),
+        totalBilled: data.reduce((sum, c) => sum + (c.totalBilled || 0), 0),
+        totalPaid: data.reduce((sum, c) => sum + (c.totalPaid || 0), 0),
+        totalDiscount: data.reduce((sum, c) => sum + (c.totalDiscount || 0), 0),
+        balanceDue: data.reduce((sum, c) => sum + (c.balanceDue || 0), 0)
+      };
+
+      const totalRow = [
+        'TOTAL SUMMARY',
+        '',
+        '',
+        '',
+        '',
+        totals.openingBalance,
+        totals.totalBilled,
+        totals.totalPaid,
+        totals.totalDiscount,
+        totals.balanceDue
+      ];
+
+      const allRows = [
+        titleRow,
+        metadataRow,
+        [],
+        headers,
+        ...rows,
+        totalRow
+      ];
+
+      const ws = XLSXStyle.utils.aoa_to_sheet(allRows);
+
+      // Merge Title and Metadata rows across 10 columns
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }
+      ];
+
+      // Style Sheet cells
+      Object.keys(ws).forEach(key => {
+        if (key.startsWith('!')) return;
+
+        const cell = ws[key];
+        const colLetter = key.replace(/[0-9]/g, '');
+        const colIdx = colLetter.charCodeAt(0) - 65; // A=0, B=1, ...
+        
+        const row = parseInt(key.replace(/[^0-9]/g, ''), 10);
+
+        // Default style
+        cell.s = {
+          font: { name: 'Arial', size: 10 },
+          border: {
+            top: { style: 'thin', color: { rgb: 'E2E8F0' } },
+            bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
+            left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+            right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+          }
+        };
+
+        if (row === 1) {
+          // Title
+          cell.s = {
+            font: { name: 'Arial', size: 14, bold: true, color: { rgb: '1A202C' } },
+            alignment: { horizontal: 'left', vertical: 'center' },
+            border: {}
+          };
+        } else if (row === 2) {
+          // Metadata
+          cell.s = {
+            font: { name: 'Arial', size: 10, italic: true, color: { rgb: '718096' } },
+            alignment: { horizontal: 'left', vertical: 'center' },
+            border: {}
+          };
+        } else if (row === 3) {
+          // Empty separator
+          cell.s = { border: {} };
+        } else if (row === 4) {
+          // Headers
+          cell.s = {
+            font: { name: 'Arial', size: 10, bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: '2D3748' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: {
+              top: { style: 'thin', color: { rgb: '1A202C' } },
+              bottom: { style: 'medium', color: { rgb: '1A202C' } },
+              left: { style: 'thin', color: { rgb: '4A5568' } },
+              right: { style: 'thin', color: { rgb: '4A5568' } }
+            }
+          };
+        } else if (row === allRows.length) {
+          // Totals Row
+          cell.s = {
+            font: { name: 'Arial', size: 10, bold: true, color: { rgb: '1A202C' } },
+            fill: { fgColor: { rgb: 'F7FAFC' } },
+            border: {
+              top: { style: 'thin', color: { rgb: '1A202C' } },
+              bottom: { style: 'double', color: { rgb: '1A202C' } },
+              left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+              right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+            },
+            alignment: colIdx >= 5 ? { horizontal: 'right' } : { horizontal: 'left' }
+          };
+        } else {
+          // Data rows: align numbers to right, text to left
+          if (colIdx >= 5) {
+            cell.s.alignment = { horizontal: 'right' };
+            cell.z = '₹#,##0.00'; 
+          } else {
+            cell.s.alignment = { horizontal: 'left' };
+          }
+        }
+      });
+
+      // Calculate maximum lengths for column auto-fitting
+      const maxCols = headers.map(h => h.length);
+      allRows.forEach((row, rowIdx) => {
+        if (rowIdx < 3) return;
+        row.forEach((val, i) => {
+          if (i < maxCols.length) {
+            const valStr = val !== null && val !== undefined ? val.toString() : '';
+            const len = valStr.length;
+            if (len > maxCols[i]) {
+              maxCols[i] = len;
+            }
+          }
+        });
+      });
+      ws['!cols'] = maxCols.map(w => ({ wch: Math.min(50, Math.max(w + 3, 12)) }));
+
+      const workbook = XLSXStyle.utils.book_new();
+      XLSXStyle.utils.book_append_sheet(workbook, ws, 'Customers Report');
+      
+      const fileDate = new Date().toISOString().split('T')[0];
+      XLSXStyle.writeFile(workbook, `customers_report_${fileDate}.xlsx`);
+    } catch (err) {
+      alert(err.message || 'Failed to export customer data');
+    } finally {
+      setExportingExcel(false);
+    }
   };
 
   const handleFileUpload = (e) => {
@@ -295,14 +473,25 @@ export default function Customers() {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
           <h2 className="section-title" style={{ margin: 0 }}>Customer Accounts</h2>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            style={{ padding: '8px 16px', fontSize: '0.88rem', borderRadius: '10px' }}
-            onClick={() => setIsImportOpen(true)}
-          >
-            📥 Bulk Import (Excel)
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ padding: '8px 16px', fontSize: '0.88rem', borderRadius: '10px' }}
+              onClick={() => setIsImportOpen(true)}
+            >
+              📥 Bulk Import (Excel)
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ padding: '8px 16px', fontSize: '0.88rem', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              onClick={exportCustomersToExcel}
+              disabled={exportingExcel}
+            >
+              📤 {exportingExcel ? 'Exporting...' : 'Export Customers (Excel)'}
+            </button>
+          </div>
         </div>
         <div className="search-bar">
           <input

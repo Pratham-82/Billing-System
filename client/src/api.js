@@ -16,10 +16,11 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  getCustomers: (search = '', customerType = '') => {
+  getCustomers: (search = '', customerType = '', all = false) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (customerType) params.set('customerType', customerType);
+    if (all) params.set('all', 'true');
     const qs = params.toString();
     return request(`/customers${qs ? `?${qs}` : ''}`);
   },

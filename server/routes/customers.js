@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    const { search, customerType } = req.query;
+    const { search, customerType, all } = req.query;
     let query = {};
 
     if (search) {
@@ -21,7 +21,11 @@ router.get('/', async (req, res) => {
       query.customerType = customerType;
     }
 
-    const customers = await Customer.find(query).sort({ name: 1 }).limit(50);
+    let dbQuery = Customer.find(query).sort({ name: 1 });
+    if (all !== 'true') {
+      dbQuery = dbQuery.limit(50);
+    }
+    const customers = await dbQuery;
     const customerIds = customers.map((c) => c._id);
 
     // Fetch all orders for all fetched customers in a single batch query
@@ -50,6 +54,7 @@ router.get('/', async (req, res) => {
       return {
         ...customer.toObject(),
         balanceDue,
+        totalBilled,
       };
     });
 

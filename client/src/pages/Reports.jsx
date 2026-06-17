@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { api } from '../api';
 // PaymentBadge import removed as order-level payment status is deprecated
 import { formatCurrency } from '../utils/format';
@@ -170,6 +170,47 @@ export default function Reports() {
       { wch: 20 }
     ];
 
+    // Style Summary Sheet
+    Object.keys(wsSummary).forEach(key => {
+      if (key.startsWith('!')) return;
+      const cell = wsSummary[key];
+      const row = parseInt(key.replace(/[^0-9]/g, ''), 10);
+      
+      cell.s = {
+        font: { name: 'Arial', size: 10 },
+        border: {
+          top: { style: 'thin', color: { rgb: 'E5E5E5' } },
+          bottom: { style: 'thin', color: { rgb: 'E5E5E5' } },
+          left: { style: 'thin', color: { rgb: 'E5E5E5' } },
+          right: { style: 'thin', color: { rgb: 'E5E5E5' } }
+        }
+      };
+
+      if (row === 1) {
+        cell.s = {
+          font: { name: 'Arial', size: 14, bold: true, color: { rgb: '1A202C' } },
+          border: {}
+        };
+      } else if (row === 2) {
+        cell.s = {
+          font: { name: 'Arial', size: 10, italic: true, color: { rgb: '718096' } },
+          border: {}
+        };
+      } else if (row === 4) {
+        cell.s = {
+          font: { name: 'Arial', size: 11, bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: '2D3748' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: {
+            top: { style: 'thin', color: { rgb: '1A202C' } },
+            bottom: { style: 'medium', color: { rgb: '1A202C' } }
+          }
+        };
+      } else if (row > 4) {
+        cell.s.font = { name: 'Arial', size: 11, bold: true, color: { rgb: '2D3748' } };
+      }
+    });
+
     // Sheet 2: Order Details (Grouped Tabular Layout)
     const orderHeaders = [[
       'Bill Number',
@@ -254,6 +295,78 @@ export default function Reports() {
     });
 
     const wsOrders = XLSX.utils.aoa_to_sheet([...orderHeaders, ...orderRows]);
+
+    // Style Order Details Sheet
+    Object.keys(wsOrders).forEach(key => {
+      if (key.startsWith('!')) return;
+      
+      const cell = wsOrders[key];
+      const col = key.replace(/[0-9]/g, '');
+      const row = parseInt(key.replace(/[^0-9]/g, ''), 10);
+      
+      // Default cell styles
+      cell.s = {
+        font: { name: 'Arial', size: 10 },
+        border: {
+          top: { style: 'thin', color: { rgb: 'E2E8F0' } },
+          bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
+          left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+          right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+        }
+      };
+
+      if (row === 1) {
+        // Headers row
+        cell.s = {
+          font: { name: 'Arial', size: 10, bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: '2D3748' } }, // Dark charcoal/slate
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: {
+            top: { style: 'thin', color: { rgb: '1A202C' } },
+            bottom: { style: 'medium', color: { rgb: '1A202C' } },
+            left: { style: 'thin', color: { rgb: '4A5568' } },
+            right: { style: 'thin', color: { rgb: '4A5568' } }
+          }
+        };
+      } else {
+        const rowData = orderRows[row - 2];
+        if (rowData) {
+          const isTotalRow = rowData[9] === 'Subtotal:' || rowData[9] === 'Discount:' || rowData[9] === 'Tax:' || rowData[9] === 'Grand Total:';
+          const isBlankRow = rowData.every(c => c === '');
+          
+          if (isBlankRow) {
+            // Remove borders for blank separators
+            cell.s = { border: {} };
+          } else if (isTotalRow) {
+            const label = rowData[9];
+            if (label === 'Grand Total:') {
+              cell.s = {
+                font: { name: 'Arial', size: 10, bold: true, color: { rgb: '000000' } },
+                fill: { fgColor: { rgb: 'F7FAFC' } },
+                border: {
+                  top: { style: 'thin', color: { rgb: '1A202C' } },
+                  bottom: { style: 'double', color: { rgb: '000000' } }
+                }
+              };
+            } else {
+              cell.s = {
+                font: { name: 'Arial', size: 10, bold: true, color: { rgb: '4A5568' } },
+                border: {
+                  top: { style: 'thin', color: { rgb: 'CBD5E0' } },
+                  bottom: { style: 'thin', color: { rgb: 'CBD5E0' } }
+                }
+              };
+            }
+          } else {
+            // Check if it's the first row of an order to add separating border
+            const hasBillNumber = rowData[0] !== '';
+            if (hasBillNumber) {
+              cell.s.border.top = { style: 'medium', color: { rgb: '718096' } };
+            }
+          }
+        }
+      }
+    });
 
     // Calculate maximum lengths for column auto-fitting
     const maxCols = orderHeaders[0].map(h => h.length);

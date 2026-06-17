@@ -271,7 +271,7 @@ router.post('/', async (req, res) => {
           areaSqFt,
           customization: item.customization?.trim() || '',
           itemDate: item.itemDate?.trim() || '',
-          lineTotal: quantity * areaSqFt * pricePerRoll,
+          lineTotal: Math.round(quantity * areaSqFt) * pricePerRoll,
         };
       } else if (item.type === 'running') {
         const runningFt = Number(item.runningFt) || 0;
@@ -440,7 +440,7 @@ router.put('/:id', async (req, res) => {
           areaSqFt,
           customization: item.customization?.trim() || '',
           itemDate: item.itemDate?.trim() || '',
-          lineTotal: quantity * areaSqFt * pricePerRoll,
+          lineTotal: Math.round(quantity * areaSqFt) * pricePerRoll,
         };
       } else if (item.type === 'running') {
         const runningFt = Number(item.runningFt) || 0;

@@ -43,11 +43,13 @@ function getItemLineTotal(item) {
     const heightFt = isConvertRequired ? height / 12 : height;
     const widthFt = isConvertRequired ? width / 12 : width;
     const areaSqFt = heightFt * widthFt;
+    const qty = Number(item.quantity) || 1;
 
-    return areaSqFt * price;
+    return Math.round(qty * areaSqFt) * price;
   } else if (normType === 'running') {
     const runningFt = Number(item.runningFt) || 0;
-    return runningFt * price;
+    const qty = Number(item.quantity) || 1;
+    return qty * runningFt * price;
   }
 
   const qty = Number(item.quantity) || 0;

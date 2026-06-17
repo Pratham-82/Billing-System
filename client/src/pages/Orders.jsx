@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { formatCurrency } from '../utils/format';
@@ -421,7 +422,7 @@ export default function Orders() {
         </div>
       )}
 
-      {pdfOrders.length > 0 && (
+      {pdfOrders.length > 0 && createPortal(
         <div id="pdf-batch-container" style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: '#ffffff' }}>
           {pdfOrders.map((order, idx) => (
             <div 
@@ -441,7 +442,8 @@ export default function Orders() {
               <Bill order={order} customerBalance={pdfBalances[order.customer?._id]} />
             </div>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

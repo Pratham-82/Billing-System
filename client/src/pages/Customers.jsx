@@ -123,12 +123,7 @@ export default function Customers() {
         'Phone',
         'Email',
         'Address',
-        'Customer Type',
-        'Opening Balance (INR)',
-        'Total Billed (INR)',
-        'Total Paid (INR)',
-        'Total Discount (INR)',
-        'Outstanding Balance (INR)'
+        'Balance Due (INR)'
       ];
 
       const rows = data.map(c => [
@@ -136,33 +131,17 @@ export default function Customers() {
         c.phone || '',
         c.email || '',
         c.address || '',
-        c.customerType || 'retail',
-        c.openingBalance || 0,
-        c.totalBilled || 0,
-        c.totalPaid || 0,
-        c.totalDiscount || 0,
         c.balanceDue || 0
       ]);
 
-      const totals = {
-        openingBalance: data.reduce((sum, c) => sum + (c.openingBalance || 0), 0),
-        totalBilled: data.reduce((sum, c) => sum + (c.totalBilled || 0), 0),
-        totalPaid: data.reduce((sum, c) => sum + (c.totalPaid || 0), 0),
-        totalDiscount: data.reduce((sum, c) => sum + (c.totalDiscount || 0), 0),
-        balanceDue: data.reduce((sum, c) => sum + (c.balanceDue || 0), 0)
-      };
+      const totalBalanceDue = data.reduce((sum, c) => sum + (c.balanceDue || 0), 0);
 
       const totalRow = [
         'TOTAL SUMMARY',
         '',
         '',
         '',
-        '',
-        totals.openingBalance,
-        totals.totalBilled,
-        totals.totalPaid,
-        totals.totalDiscount,
-        totals.balanceDue
+        totalBalanceDue
       ];
 
       const allRows = [
@@ -176,10 +155,10 @@ export default function Customers() {
 
       const ws = XLSXStyle.utils.aoa_to_sheet(allRows);
 
-      // Merge Title and Metadata rows across 10 columns
+      // Merge Title and Metadata rows across 5 columns
       ws['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }
       ];
 
       // Style Sheet cells
@@ -244,11 +223,11 @@ export default function Customers() {
               left: { style: 'thin', color: { rgb: 'E2E8F0' } },
               right: { style: 'thin', color: { rgb: 'E2E8F0' } }
             },
-            alignment: colIdx >= 5 ? { horizontal: 'right' } : { horizontal: 'left' }
+            alignment: colIdx === 4 ? { horizontal: 'right' } : { horizontal: 'left' }
           };
         } else {
           // Data rows: align numbers to right, text to left
-          if (colIdx >= 5) {
+          if (colIdx === 4) {
             cell.s.alignment = { horizontal: 'right' };
             cell.z = '₹#,##0.00'; 
           } else {

@@ -92,14 +92,14 @@ export default function Orders() {
       // Wait for state rendering in the DOM
       setTimeout(() => {
         if (consolidated) {
-          const container = document.getElementById('pdf-batch-container');
-          if (!container) {
+          const contents = document.getElementById('pdf-batch-contents');
+          if (!contents) {
             setIsGeneratingPDF(false);
             return;
           }
 
           // Add pdf-mode to each bill
-          const billElements = container.querySelectorAll('.bill');
+          const billElements = contents.querySelectorAll('.bill');
           billElements.forEach(el => el.classList.add('pdf-mode'));
 
           const opt = {
@@ -112,7 +112,7 @@ export default function Orders() {
           };
 
           window.html2pdf()
-            .from(container)
+            .from(contents)
             .set(opt)
             .save()
             .then(() => {
@@ -131,19 +131,39 @@ export default function Orders() {
           const runDownloads = async () => {
             for (let i = 0; i < selectedOrders.length; i++) {
               const order = selectedOrders[i];
+              
               const tempDiv = document.createElement('div');
-              tempDiv.style.position = 'absolute';
-              tempDiv.style.top = '100%';
+              tempDiv.style.position = 'fixed';
+              tempDiv.style.top = '0';
               tempDiv.style.left = '0';
-              tempDiv.style.width = '100%';
+              tempDiv.style.width = '100vw';
+              tempDiv.style.height = '100vh';
+              tempDiv.style.zIndex = '99999';
               tempDiv.style.background = '#ffffff';
+              tempDiv.style.overflowY = 'auto';
+              
+              const loaderHeader = document.createElement('div');
+              loaderHeader.style.textAlign = 'center';
+              loaderHeader.style.padding = '15px';
+              loaderHeader.style.background = '#2D3748';
+              loaderHeader.style.color = '#ffffff';
+              loaderHeader.style.fontSize = '1.1rem';
+              loaderHeader.style.fontWeight = 'bold';
+              loaderHeader.innerText = `⏳ Generating PDF ${i + 1} of ${selectedOrders.length} (${order.billNumber})... Please wait.`;
+              tempDiv.appendChild(loaderHeader);
+
+              const contentDiv = document.createElement('div');
+              contentDiv.style.padding = '20px';
+              contentDiv.style.background = '#ffffff';
+              tempDiv.appendChild(contentDiv);
+              
               document.body.appendChild(tempDiv);
               
               const renderedBill = document.getElementById(`pdf-single-bill-${i}`);
               if (renderedBill) {
                 const clonedBill = renderedBill.cloneNode(true);
                 clonedBill.classList.add('pdf-mode');
-                tempDiv.appendChild(clonedBill);
+                contentDiv.appendChild(clonedBill);
 
                 const opt = {
                   margin:       10,
@@ -155,7 +175,7 @@ export default function Orders() {
 
                 await new Promise((resolve) => {
                   window.html2pdf()
-                    .from(tempDiv)
+                    .from(contentDiv)
                     .set(opt)
                     .save()
                     .then(() => {
@@ -170,6 +190,8 @@ export default function Orders() {
                 });
 
                 await new Promise(resolve => setTimeout(resolve, 400));
+              } else {
+                document.body.removeChild(tempDiv);
               }
             }
           };
@@ -423,25 +445,42 @@ export default function Orders() {
       )}
 
       {pdfOrders.length > 0 && createPortal(
-        <div id="pdf-batch-container" style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: '#ffffff' }}>
-          {pdfOrders.map((order, idx) => (
-            <div 
-              key={order._id} 
-              id={`pdf-single-bill-${idx}`}
-              className="pdf-page-break" 
-              style={{ 
-                pageBreakAfter: 'always', 
-                breakAfter: 'page', 
-                background: '#ffffff', 
-                padding: '20px',
-                width: '297mm',
-                minHeight: '210mm',
-                boxSizing: 'border-box'
-              }}
-            >
-              <Bill order={order} customerBalance={pdfBalances[order.customer?._id]} />
-            </div>
-          ))}
+        <div 
+          id="pdf-batch-container" 
+          style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            width: '100vw', 
+            height: '100vh', 
+            overflowY: 'auto',
+            background: '#ffffff', 
+            zIndex: 99999
+          }}
+        >
+          <div style={{ textAlign: 'center', padding: '15px', background: '#2D3748', color: '#ffffff', fontSize: '1.1rem', fontWeight: 'bold' }}>
+            ⏳ Generating Batch PDF... Please wait.
+          </div>
+          <div id="pdf-batch-contents" style={{ padding: '20px', background: '#ffffff' }}>
+            {pdfOrders.map((order, idx) => (
+              <div 
+                key={order._id} 
+                id={`pdf-single-bill-${idx}`}
+                className="pdf-page-break" 
+                style={{ 
+                  pageBreakAfter: 'always', 
+                  breakAfter: 'page', 
+                  background: '#ffffff', 
+                  padding: '20px',
+                  width: '297mm',
+                  minHeight: '210mm',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <Bill order={order} customerBalance={pdfBalances[order.customer?._id]} />
+              </div>
+            ))}
+          </div>
         </div>,
         document.body
       )}

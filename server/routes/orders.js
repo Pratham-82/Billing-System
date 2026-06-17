@@ -114,6 +114,7 @@ router.patch('/:id/payment', async (req, res) => {
 
 router.get('/report', async (req, res) => {
   try {
+    const { startDate, endDate } = req.query;
     let query = { isDeleted: { $ne: true } };
 
     if (startDate || endDate) {

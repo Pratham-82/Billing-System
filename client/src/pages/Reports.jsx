@@ -140,22 +140,75 @@ export default function Reports() {
     ];
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
 
-    // Sheet 2: Order Details
-    const orderHeaders = [['Bill Number', 'Date', 'Customer Name', 'Customer Type', 'Items Summary', 'Total Amount (INR)', 'Payment Status']];
-    const orderRows = orders.map(order => [
-      order.billNumber,
-      formatDate(order.billDate || order.createdAt),
-      order.customer?.name || order.customerName || 'Deleted Customer',
-      order.customer?.customerType || 'retail',
-      getItemSummaryString(order.items),
-      order.grandTotal,
-      order.paymentStatus
-    ]);
+    // Sheet 2: Order Details (Flat Table of Items with Order Metadata)
+    const orderHeaders = [[
+      'Bill Number',
+      'Date',
+      'Customer Name',
+      'Customer Phone',
+      'Site Address',
+      'Item Name',
+      'Item Type',
+      'Quantity',
+      'Dimensions',
+      'Rate (INR)',
+      'Rounded Area/Length',
+      'Item Total (INR)',
+      'Bill Subtotal (INR)',
+      'Bill Discount (INR)',
+      'Bill Tax (INR)',
+      'Bill Grand Total (INR)'
+    ]];
+
+    const orderRows = [];
+    orders.forEach(order => {
+      const items = order.items && order.items.length > 0 ? order.items : [{}];
+      items.forEach(item => {
+        let dims = '—';
+        let roundedMeasure = '—';
+        
+        if (item.type === 'sqft' || item.type === 'custom') {
+          const unit = item.measurementUnit || 'in';
+          const h = item.height || item.heightFt || 0;
+          const w = item.width || item.widthFt || 0;
+          dims = `${h}X${w} ${unit}`;
+          const singleArea = item.areaSqFt || (unit === 'in' ? (h / 12) * (w / 12) : h * w);
+          roundedMeasure = `${Math.round((item.quantity || 1) * singleArea)} sq ft`;
+        } else if (item.type === 'running') {
+          const runFt = item.runningFt || 0;
+          dims = `${runFt} ft`;
+          roundedMeasure = `${(item.quantity || 1) * runFt} ft`;
+        } else if (item.type) {
+          dims = '—';
+          roundedMeasure = `${item.quantity || 1} qty`;
+        }
+
+        orderRows.push([
+          order.billNumber || '—',
+          formatDate(order.billDate || order.createdAt),
+          order.customer?.name || order.customerName || 'Deleted Customer',
+          order.customer?.phone || order.customerPhone || '—',
+          order.siteAddress || '—',
+          item.wallpaperName || '—',
+          item.type || '—',
+          item.quantity !== undefined ? item.quantity : '—',
+          dims,
+          item.pricePerRoll !== undefined ? item.pricePerRoll : '—',
+          roundedMeasure,
+          item.lineTotal !== undefined ? item.lineTotal : '—',
+          order.subtotal || 0,
+          order.discount || 0,
+          order.tax || 0,
+          order.grandTotal || 0
+        ]);
+      });
+    });
+
     const wsOrders = XLSX.utils.aoa_to_sheet([...orderHeaders, ...orderRows]);
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, wsSummary, 'Summary');
-    XLSX.utils.book_append_sheet(workbook, wsOrders, 'Orders List');
+    XLSX.utils.book_append_sheet(workbook, wsOrders, 'Order Details');
 
     XLSX.writeFile(workbook, `sales_report_${startDate}_to_${endDate}.xlsx`);
   };

@@ -161,7 +161,7 @@ export default function Orders() {
 
               const contentDiv = document.createElement('div');
               contentDiv.style.width = '1120px';
-              contentDiv.style.margin = '90px auto 0 auto';
+              contentDiv.style.margin = '0 auto';
               contentDiv.style.padding = '0';
               contentDiv.style.background = '#ffffff';
               tempDiv.appendChild(contentDiv);
@@ -476,7 +476,7 @@ export default function Orders() {
             style={{ 
               background: '#ffffff', 
               width: '1120px', 
-              margin: '90px auto 0 auto'
+              margin: '0 auto'
             }}
           >
             {pdfOrders.map((order, idx) => (

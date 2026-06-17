@@ -25,6 +25,20 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [customers, setCustomers] = useState([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+
+  useEffect(() => {
+    const loadCustomers = async () => {
+      try {
+        const data = await api.getCustomers('');
+        setCustomers(data);
+      } catch (err) {
+        console.error('Failed to load customers:', err);
+      }
+    };
+    loadCustomers();
+  }, []);
 
   async function loadOrders() {
     setLoading(true);
@@ -32,6 +46,7 @@ export default function Orders() {
     try {
       const data = await api.getOrders({
         search,
+        customerId: selectedCustomerId || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       });
@@ -46,7 +61,7 @@ export default function Orders() {
   useEffect(() => {
     const timer = setTimeout(loadOrders, 300);
     return () => clearTimeout(timer);
-  }, [search, startDate, endDate]);
+  }, [search, selectedCustomerId, startDate, endDate]);
 
 
 
@@ -62,6 +77,26 @@ export default function Orders() {
             onChange={(e) => setSearch(e.target.value)}
             style={{ flex: 1, minWidth: '200px' }}
           />
+          <select
+            value={selectedCustomerId}
+            onChange={(e) => setSelectedCustomerId(e.target.value)}
+            style={{ 
+              width: '280px', 
+              padding: '10px 14px', 
+              borderRadius: '10px', 
+              border: '1px solid var(--border)', 
+              background: 'var(--surface-alt)', 
+              color: 'var(--text)', 
+              fontWeight: 500 
+            }}
+          >
+            <option value="">-- All Customers --</option>
+            {customers.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.name} {c.phone ? `(${c.phone})` : ''}
+              </option>
+            ))}
+          </select>
         </div>
         
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: '12px', border: '1px solid var(--border)' }}>

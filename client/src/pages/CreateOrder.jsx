@@ -611,7 +611,7 @@ export default function CreateOrder() {
                                 <>
                                   Dimensions: {h.toFixed(2)} in × {w.toFixed(2)} in
                                   <br />
-                                  Area: {areaSingle.toFixed(2)} sq ft
+                                  Area: {areaSingle.toFixed(2)} sq ft (Rounded: {Math.round((Number(item.quantity) || 1) * areaSingle)} sq ft)
                                 </>
                               );
                             } else {

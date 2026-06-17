@@ -83,6 +83,7 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
                     {(() => {
                       const t = item.type;
                       const qty = item.quantity || 1;
+                      const priceStr = ` @ ${formatCurrency(item.pricePerRoll)}`;
                       if (t === 'sqft' || t === 'custom') {
                         const unit = item.measurementUnit || 'in';
                         const h = item.height || item.heightFt || 0;
@@ -91,16 +92,16 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
                         const totalArea = singleArea * qty;
 
                         return qty > 1
-                          ? `${qty} pcs × ${h} ${unit} × ${w} ${unit} = ${Math.round(totalArea)} sq ft`
-                          : `${h} ${unit} × ${w} ${unit} = ${Math.round(singleArea)} sq ft`;
+                          ? `${qty} pcs × ${h} ${unit} × ${w} ${unit} = ${Math.round(totalArea)} sq ft${priceStr}`
+                          : `${h} ${unit} × ${w} ${unit} = ${Math.round(singleArea)} sq ft${priceStr}`;
                       } else if (t === 'running') {
                         const runningFt = item.runningFt || 0;
                         const totalLength = runningFt * qty;
                         return qty > 1
-                          ? `${qty} pcs × ${runningFt} ft = ${totalLength.toFixed(2)} ft`
-                          : `${runningFt} ft`;
+                          ? `${qty} pcs × ${runningFt} ft = ${totalLength.toFixed(2)} ft${priceStr}`
+                          : `${runningFt} ft${priceStr}`;
                       } else {
-                        return `${qty}`;
+                        return `${qty}${priceStr}`;
                       }
                     })()}
                   </td>

@@ -108,7 +108,7 @@ export default function Orders() {
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
-            pagebreak:    { mode: ['css', 'legacy'] }
+            pagebreak:    { mode: ['css', 'legacy'], avoid: '.bill' }
           };
 
           window.html2pdf()
@@ -140,9 +140,12 @@ export default function Orders() {
               tempDiv.style.height = '100vh';
               tempDiv.style.zIndex = '99999';
               tempDiv.style.background = '#ffffff';
-              tempDiv.style.overflowY = 'auto';
               
               const loaderHeader = document.createElement('div');
+              loaderHeader.style.position = 'fixed';
+              loaderHeader.style.top = '0';
+              loaderHeader.style.left = '0';
+              loaderHeader.style.width = '100%';
               loaderHeader.style.textAlign = 'center';
               loaderHeader.style.padding = '24px';
               loaderHeader.style.background = 'linear-gradient(135deg, var(--accent), var(--accent-hover, #a36f4c))';
@@ -151,12 +154,18 @@ export default function Orders() {
               loaderHeader.style.fontWeight = '600';
               loaderHeader.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.15)';
               loaderHeader.style.letterSpacing = '0.5px';
+              loaderHeader.style.zIndex = '100000';
               loaderHeader.innerText = `⏳ Generating PDF ${i + 1} of ${selectedOrders.length} (${order.billNumber})... Please wait.`;
               tempDiv.appendChild(loaderHeader);
 
               const contentDiv = document.createElement('div');
-              contentDiv.style.padding = '20px';
+              contentDiv.style.position = 'absolute';
+              contentDiv.style.top = '0';
+              contentDiv.style.left = '0';
+              contentDiv.style.width = '1120px';
+              contentDiv.style.padding = '0';
               contentDiv.style.background = '#ffffff';
+              contentDiv.style.zIndex = '99999';
               tempDiv.appendChild(contentDiv);
               
               document.body.appendChild(tempDiv);
@@ -172,7 +181,8 @@ export default function Orders() {
                   filename:     `${order.billNumber}.pdf`,
                   image:        { type: 'jpeg', quality: 0.98 },
                   html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-                  jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                  jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
+                  pagebreak:    { mode: ['css', 'legacy'], avoid: '.bill' }
                 };
 
                 await new Promise((resolve) => {
@@ -455,15 +465,14 @@ export default function Orders() {
             left: 0, 
             width: '100vw', 
             height: '100vh', 
-            overflowY: 'auto',
             background: '#ffffff', 
             zIndex: 99999
           }}
         >
-          <div style={{ textAlign: 'center', padding: '24px', background: 'linear-gradient(135deg, var(--accent), var(--accent-hover, #a36f4c))', color: '#ffffff', fontSize: '1.2rem', fontWeight: '600', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)', letterSpacing: '0.5px' }}>
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', textAlign: 'center', padding: '24px', background: 'linear-gradient(135deg, var(--accent), var(--accent-hover, #a36f4c))', color: '#ffffff', fontSize: '1.2rem', fontWeight: '600', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)', letterSpacing: '0.5px', zIndex: 100000 }}>
             ⏳ Generating Batch PDF... Please wait.
           </div>
-          <div id="pdf-batch-contents" style={{ background: '#ffffff', width: '100%' }}>
+          <div id="pdf-batch-contents" style={{ position: 'absolute', top: 0, left: 0, width: '100%', background: '#ffffff', zIndex: 99999 }}>
             {pdfOrders.map((order, idx) => (
               <div key={order._id}>
                 <div 

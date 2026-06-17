@@ -52,11 +52,12 @@ export default function BillView() {
     element.classList.add('pdf-mode');
 
     const opt = {
-      margin:       10,
+      margin:       0,
       filename:     `${order.billNumber}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
+      pagebreak:    { mode: ['css', 'legacy'], avoid: '.bill' }
     };
 
     return window.html2pdf()

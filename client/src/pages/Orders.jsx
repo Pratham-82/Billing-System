@@ -3,6 +3,21 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { formatCurrency } from '../utils/format';
 
+function getOrderTotalSqFt(order) {
+  if (!order || !order.items || !Array.isArray(order.items)) return 0;
+  return order.items.reduce((sum, item) => {
+    if (item.type === 'sqft' || item.type === 'custom') {
+      const qty = Number(item.quantity) || 1;
+      const unit = item.measurementUnit || 'in';
+      const h = Number(item.height) || Number(item.heightFt) || 0;
+      const w = Number(item.width) || Number(item.widthFt) || 0;
+      const area = item.areaSqFt || (unit === 'in' ? (h / 12) * (w / 12) : h * w);
+      return sum + (area * qty);
+    }
+    return sum;
+  }, 0);
+}
+
 export default function Orders() {
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -95,6 +110,7 @@ export default function Orders() {
               <tr>
                 <th>Bill No</th>
                 <th>Customer</th>
+                <th>Total Area</th>
                 <th>Total</th>
                 <th>Date</th>
                 <th></th>
@@ -128,6 +144,12 @@ export default function Orders() {
                     <td>
                       <div>{order.customer?.name || order.customerName || 'Deleted Customer'}</div>
                       <small style={{ color: 'var(--text-muted)' }}>{order.customer?.phone || order.customerPhone || '—'}</small>
+                    </td>
+                    <td>
+                      {(() => {
+                        const totalSqFt = Math.round(getOrderTotalSqFt(order));
+                        return totalSqFt > 0 ? `${totalSqFt} sq ft` : '—';
+                      })()}
                     </td>
                     <td>{formatCurrency(order.grandTotal)}</td>
                     <td>

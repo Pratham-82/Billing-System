@@ -106,9 +106,16 @@ export default function Orders() {
             margin:       0,
             filename:     `bills_export_${new Date().toISOString().split('T')[0]}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+            html2canvas:  { 
+              scale: 2, 
+              useCORS: true, 
+              logging: false, 
+              backgroundColor: '#ffffff',
+              scrollX: 0,
+              scrollY: 0
+            },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
-            pagebreak:    { mode: ['css', 'legacy'], avoid: '.bill' }
+            pagebreak:    { mode: 'css', avoid: '.bill' }
           };
 
           window.html2pdf()
@@ -178,9 +185,16 @@ export default function Orders() {
                   margin:       0,
                   filename:     `${order.billNumber}.pdf`,
                   image:        { type: 'jpeg', quality: 0.98 },
-                  html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+                  html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true, 
+                    logging: false, 
+                    backgroundColor: '#ffffff',
+                    scrollX: 0,
+                    scrollY: 0
+                  },
                   jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
-                  pagebreak:    { mode: ['css', 'legacy'], avoid: '.bill' }
+                  pagebreak:    { mode: 'css', avoid: '.bill' }
                 };
 
                 await new Promise((resolve) => {

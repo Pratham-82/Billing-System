@@ -92,8 +92,8 @@ export default function Bill({ order, shopName = 'Speaking Wall Interio', custom
                         const totalArea = singleArea * qty;
 
                         return qty > 1
-                          ? `${qty} pcs × ${h}X${w} = ${Math.round(totalArea)} sq ft${priceStr}`
-                          : `${h}X${w} = ${Math.round(singleArea)} sq ft${priceStr}`;
+                          ? `${qty} pcs × ${w}X${h} = ${Math.round(totalArea)} sq ft${priceStr}`
+                          : `${w}X${h} = ${Math.round(singleArea)} sq ft${priceStr}`;
                       } else if (t === 'running') {
                         const runningFt = item.runningFt || 0;
                         const totalLength = runningFt * qty;

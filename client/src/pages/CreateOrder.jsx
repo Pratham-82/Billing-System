@@ -532,18 +532,6 @@ export default function CreateOrder() {
                     {normType === 'sqft' && (
                       <>
                         <div className="field">
-                          <label>Height (in) *</label>
-                          <input
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            value={item.height ?? ''}
-                            onChange={(e) => updateItem(index, 'height', e.target.value)}
-                            placeholder="e.g. 96"
-                            required
-                          />
-                        </div>
-                        <div className="field">
                           <label>Width (in) *</label>
                           <input
                             type="number"
@@ -552,6 +540,18 @@ export default function CreateOrder() {
                             value={item.width ?? ''}
                             onChange={(e) => updateItem(index, 'width', e.target.value)}
                             placeholder="e.g. 144"
+                            required
+                          />
+                        </div>
+                        <div className="field">
+                          <label>Height (in) *</label>
+                          <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={item.height ?? ''}
+                            onChange={(e) => updateItem(index, 'height', e.target.value)}
+                            placeholder="e.g. 96"
                             required
                           />
                         </div>
@@ -604,12 +604,12 @@ export default function CreateOrder() {
                         <small className="bill-meta" style={{ display: 'block', marginTop: 4 }}>
                           {(() => {
                             if (normType === 'sqft') {
-                              const h = Number(item.height) || 0;
-                              const w = Number(item.width) || 0;
-                              const areaSingle = (h / 12) * (w / 12);
-                              return (
-                                <>
-                                  Dimensions: {h.toFixed(2)} in × {w.toFixed(2)} in
+                               const h = Number(item.height) || 0;
+                               const w = Number(item.width) || 0;
+                               const areaSingle = (h / 12) * (w / 12);
+                               return (
+                                 <>
+                                   Dimensions: {w.toFixed(2)} in × {h.toFixed(2)} in
                                   <br />
                                   Area: {Math.round((Number(item.quantity) || 1) * areaSingle)} sq ft
                                 </>

@@ -238,7 +238,7 @@ export default function Reports() {
           const unit = item.measurementUnit || 'in';
           const h = item.height || item.heightFt || 0;
           const w = item.width || item.widthFt || 0;
-          dims = `${h}X${w} ${unit}`;
+          dims = `${w}X${h} ${unit}`;
           const singleArea = item.areaSqFt || (unit === 'in' ? (h / 12) * (w / 12) : h * w);
           roundedMeasure = `${Math.round((item.quantity || 1) * singleArea)} sq ft`;
         } else if (item.type === 'running') {

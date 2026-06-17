@@ -144,11 +144,13 @@ export default function Orders() {
               
               const loaderHeader = document.createElement('div');
               loaderHeader.style.textAlign = 'center';
-              loaderHeader.style.padding = '15px';
-              loaderHeader.style.background = '#2D3748';
+              loaderHeader.style.padding = '24px';
+              loaderHeader.style.background = 'linear-gradient(135deg, var(--accent), var(--accent-hover, #a36f4c))';
               loaderHeader.style.color = '#ffffff';
-              loaderHeader.style.fontSize = '1.1rem';
-              loaderHeader.style.fontWeight = 'bold';
+              loaderHeader.style.fontSize = '1.2rem';
+              loaderHeader.style.fontWeight = '600';
+              loaderHeader.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.15)';
+              loaderHeader.style.letterSpacing = '0.5px';
               loaderHeader.innerText = `⏳ Generating PDF ${i + 1} of ${selectedOrders.length} (${order.billNumber})... Please wait.`;
               tempDiv.appendChild(loaderHeader);
 
@@ -458,10 +460,10 @@ export default function Orders() {
             zIndex: 99999
           }}
         >
-          <div style={{ textAlign: 'center', padding: '15px', background: '#2D3748', color: '#ffffff', fontSize: '1.1rem', fontWeight: 'bold' }}>
+          <div style={{ textAlign: 'center', padding: '24px', background: 'linear-gradient(135deg, var(--accent), var(--accent-hover, #a36f4c))', color: '#ffffff', fontSize: '1.2rem', fontWeight: '600', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)', letterSpacing: '0.5px' }}>
             ⏳ Generating Batch PDF... Please wait.
           </div>
-          <div id="pdf-batch-contents" style={{ padding: '20px', background: '#ffffff' }}>
+          <div id="pdf-batch-contents" style={{ background: '#ffffff', width: '100%' }}>
             {pdfOrders.map((order, idx) => (
               <div 
                 key={order._id} 
@@ -471,9 +473,7 @@ export default function Orders() {
                   pageBreakAfter: 'always', 
                   breakAfter: 'page', 
                   background: '#ffffff', 
-                  padding: '20px',
-                  width: '297mm',
-                  minHeight: '210mm',
+                  width: '100%',
                   boxSizing: 'border-box'
                 }}
               >

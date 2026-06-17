@@ -4,6 +4,21 @@ import * as XLSX from 'xlsx';
 import { api } from '../api';
 import { formatCurrency } from '../utils/format';
 
+function getOrderTotalSqFt(order) {
+  if (!order || !order.items || !Array.isArray(order.items)) return 0;
+  return order.items.reduce((sum, item) => {
+    if (item.type === 'sqft' || item.type === 'custom') {
+      const qty = Number(item.quantity) || 1;
+      const unit = item.measurementUnit || 'in';
+      const h = Number(item.height) || Number(item.heightFt) || 0;
+      const w = Number(item.width) || Number(item.widthFt) || 0;
+      const area = item.areaSqFt || (unit === 'in' ? (h / 12) * (w / 12) : h * w);
+      return sum + (area * qty);
+    }
+    return sum;
+  }, 0);
+}
+
 export default function Customers() {
   const [search, setSearch] = useState('');
   const [customers, setCustomers] = useState([]);
@@ -540,45 +555,58 @@ export default function Customers() {
                     <div className="empty-state">No bills for this customer</div>
                   ) : (
                     <div style={{ display: 'grid', gap: 12 }}>
-                      {orders.map((order) => (
-                        <div key={order._id} className="item-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '16px', opacity: order.isDeleted ? 0.6 : 1 }}>
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <strong>{order.billNumber}</strong>
-                              {order.isDeleted && (
-                                <span 
-                                  className="badge" 
-                                  style={{ 
-                                    background: '#ffebeb', 
-                                    color: 'var(--text-danger)', 
-                                    fontSize: '0.7rem', 
-                                    padding: '1px 6px', 
-                                    border: '1px solid #ffcdd2',
-                                    borderRadius: '4px',
-                                    fontWeight: '600'
-                                  }}
-                                >
-                                  Deleted
-                                </span>
+                      {orders.map((order) => {
+                        const totalSqFt = Math.round(getOrderTotalSqFt(order));
+                        return (
+                          <div key={order._id} className="item-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '16px', opacity: order.isDeleted ? 0.6 : 1 }}>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <strong>{order.billNumber}</strong>
+                                {order.isDeleted && (
+                                  <span 
+                                    className="badge" 
+                                    style={{ 
+                                      background: '#ffebeb', 
+                                      color: 'var(--text-danger)', 
+                                      fontSize: '0.7rem', 
+                                      padding: '1px 6px', 
+                                      border: '1px solid #ffcdd2',
+                                      borderRadius: '4px',
+                                      fontWeight: '600'
+                                    }}
+                                  >
+                                    Deleted
+                                  </span>
+                                )}
+                              </div>
+                              <div className="bill-meta">
+                                {new Date(order.createdAt).toLocaleDateString('en-IN')}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+                              {totalSqFt > 0 && (
+                                <div style={{ textAlign: 'right' }}>
+                                  <small className="bill-meta" style={{ fontSize: '0.75rem', display: 'block', marginBottom: 2 }}>Total Area</small>
+                                  <strong style={{ fontSize: '1.1rem' }}>
+                                    {totalSqFt} sq ft
+                                  </strong>
+                                </div>
                               )}
+                              <div style={{ textAlign: 'right' }}>
+                                <small className="bill-meta" style={{ fontSize: '0.75rem', display: 'block', marginBottom: 2 }}>Bill Total</small>
+                                <strong style={{ fontSize: '1.1rem', textDecoration: order.isDeleted ? 'line-through' : 'none' }}>
+                                  {formatCurrency(order.grandTotal)}
+                                </strong>
+                              </div>
                             </div>
-                            <div className="bill-meta">
-                              {new Date(order.createdAt).toLocaleDateString('en-IN')}
+                            <div className="btn-row" style={{ margin: 0 }}>
+                              <Link to={`/bill/${order._id}`} className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '0.88rem' }}>
+                                View
+                              </Link>
                             </div>
                           </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <small className="bill-meta" style={{ fontSize: '0.75rem', display: 'block', marginBottom: 2 }}>Bill Total</small>
-                            <strong style={{ fontSize: '1.1rem', textDecoration: order.isDeleted ? 'line-through' : 'none' }}>
-                              {formatCurrency(order.grandTotal)}
-                            </strong>
-                          </div>
-                          <div className="btn-row" style={{ margin: 0 }}>
-                            <Link to={`/bill/${order._id}`} className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '0.88rem' }}>
-                              View
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

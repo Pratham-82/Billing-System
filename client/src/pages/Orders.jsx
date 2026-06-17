@@ -132,8 +132,10 @@ export default function Orders() {
               const order = selectedOrders[i];
               const tempDiv = document.createElement('div');
               tempDiv.style.position = 'absolute';
-              tempDiv.style.left = '-9999px';
-              tempDiv.style.top = '-9999px';
+              tempDiv.style.top = '100%';
+              tempDiv.style.left = '0';
+              tempDiv.style.width = '100%';
+              tempDiv.style.background = '#ffffff';
               document.body.appendChild(tempDiv);
               
               const renderedBill = document.getElementById(`pdf-single-bill-${i}`);
@@ -420,7 +422,7 @@ export default function Orders() {
       )}
 
       {pdfOrders.length > 0 && (
-        <div id="pdf-batch-container" style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+        <div id="pdf-batch-container" style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: '#ffffff' }}>
           {pdfOrders.map((order, idx) => (
             <div 
               key={order._id} 

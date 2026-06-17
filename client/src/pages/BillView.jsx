@@ -90,6 +90,12 @@ export default function BillView() {
 
   return (
     <>
+      {order.isDeleted && (
+        <div className="alert alert-error no-print" style={{ marginBottom: 20, fontWeight: 'bold' }}>
+          ⚠️ This bill has been deleted and is no longer active.
+        </div>
+      )}
+
       <div className="btn-row no-print" style={{ marginBottom: 20, alignItems: 'center' }}>
         <button
           type="button"
@@ -98,16 +104,20 @@ export default function BillView() {
         >
           Download PDF
         </button>
-        <Link to={`/edit-bill/${order._id}`} className="btn btn-secondary">
-          Edit Bill
-        </Link>
-        <button
-          type="button"
-          className="btn btn-danger"
-          onClick={handleDelete}
-        >
-          Delete Bill
-        </button>
+        {!order.isDeleted && (
+          <>
+            <Link to={`/edit-bill/${order._id}`} className="btn btn-secondary">
+              Edit Bill
+            </Link>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleDelete}
+            >
+              Delete Bill
+            </button>
+          </>
+        )}
       </div>
 
       {error && <div className="alert alert-error no-print">{error}</div>}

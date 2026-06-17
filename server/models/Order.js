@@ -62,6 +62,7 @@ const orderSchema = new mongoose.Schema(
       enum: ['pending', 'completed', 'cancelled'],
       default: 'completed',
     },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -70,5 +71,6 @@ orderSchema.index({ customer: 1, createdAt: -1 });
 orderSchema.index({ paymentStatus: 1 });
 orderSchema.index({ billDate: -1 });
 orderSchema.index({ createdAt: -1 });
+orderSchema.index({ isDeleted: 1 });
 
 module.exports = mongoose.model('Order', orderSchema);

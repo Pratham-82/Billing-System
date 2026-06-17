@@ -114,8 +114,7 @@ router.patch('/:id/payment', async (req, res) => {
 
 router.get('/report', async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
-    let query = {};
+    let query = { isDeleted: { $ne: true } };
 
     if (startDate || endDate) {
       query.billDate = {};
@@ -557,7 +556,8 @@ router.delete('/:id', async (req, res) => {
       }
     }
 
-    await Order.findByIdAndDelete(order._id);
+    order.isDeleted = true;
+    await order.save();
     res.json({ message: 'Order deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

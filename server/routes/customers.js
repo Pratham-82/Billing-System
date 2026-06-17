@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
     const customerIds = customers.map((c) => c._id);
 
     // Fetch all orders for all fetched customers in a single batch query
-    const allOrders = await Order.find({ customer: { $in: customerIds } }).select(
+    const allOrders = await Order.find({ customer: { $in: customerIds }, isDeleted: { $ne: true } }).select(
       'customer grandTotal amountPaid paymentStatus'
     );
 
@@ -68,11 +68,15 @@ router.get('/:id/account', async (req, res) => {
 
     const orders = await Order.find({ customer: customer._id })
       .sort({ createdAt: -1 })
-      .select('billNumber grandTotal createdAt items');
+      .select('billNumber grandTotal createdAt items isDeleted');
 
     let totalBilled = 0;
+    let activeOrderCount = 0;
     orders.forEach((order) => {
-      totalBilled += order.grandTotal;
+      if (!order.isDeleted) {
+        totalBilled += order.grandTotal;
+        activeOrderCount++;
+      }
     });
 
     res.json({
@@ -82,7 +86,7 @@ router.get('/:id/account', async (req, res) => {
         totalPaid: customer.totalPaid || 0,
         totalDiscount: customer.totalDiscount || 0,
         balanceDue: (customer.openingBalance || 0) + totalBilled - (customer.totalPaid || 0) - (customer.totalDiscount || 0),
-        orderCount: orders.length,
+        orderCount: activeOrderCount,
       },
       orders,
     });

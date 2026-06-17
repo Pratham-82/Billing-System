@@ -541,16 +541,34 @@ export default function Customers() {
                   ) : (
                     <div style={{ display: 'grid', gap: 12 }}>
                       {orders.map((order) => (
-                        <div key={order._id} className="item-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '16px' }}>
+                        <div key={order._id} className="item-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '16px', opacity: order.isDeleted ? 0.6 : 1 }}>
                           <div>
-                            <strong>{order.billNumber}</strong>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <strong>{order.billNumber}</strong>
+                              {order.isDeleted && (
+                                <span 
+                                  className="badge" 
+                                  style={{ 
+                                    background: '#ffebeb', 
+                                    color: 'var(--text-danger)', 
+                                    fontSize: '0.7rem', 
+                                    padding: '1px 6px', 
+                                    border: '1px solid #ffcdd2',
+                                    borderRadius: '4px',
+                                    fontWeight: '600'
+                                  }}
+                                >
+                                  Deleted
+                                </span>
+                              )}
+                            </div>
                             <div className="bill-meta">
                               {new Date(order.createdAt).toLocaleDateString('en-IN')}
                             </div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
                             <small className="bill-meta" style={{ fontSize: '0.75rem', display: 'block', marginBottom: 2 }}>Bill Total</small>
-                            <strong style={{ fontSize: '1.1rem' }}>
+                            <strong style={{ fontSize: '1.1rem', textDecoration: order.isDeleted ? 'line-through' : 'none' }}>
                               {formatCurrency(order.grandTotal)}
                             </strong>
                           </div>

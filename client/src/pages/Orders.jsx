@@ -112,8 +112,28 @@ export default function Orders() {
             <tbody>
               {orders.map((order) => {
                 return (
-                  <tr key={order._id}>
-                    <td>{order.billNumber}</td>
+                  <tr key={order._id} style={order.isDeleted ? { opacity: 0.6 } : {}}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>{order.billNumber}</span>
+                        {order.isDeleted && (
+                          <span 
+                            className="badge" 
+                            style={{ 
+                              background: '#ffebeb', 
+                              color: 'var(--text-danger)', 
+                              fontSize: '0.75rem', 
+                              padding: '2px 8px', 
+                              border: '1px solid #ffcdd2',
+                              borderRadius: '4px',
+                              fontWeight: '600'
+                            }}
+                          >
+                            Deleted
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td>
                       <div>{order.customer?.name || order.customerName || 'Deleted Customer'}</div>
                       <small style={{ color: 'var(--text-muted)' }}>{order.customer?.phone || order.customerPhone || '—'}</small>
@@ -131,14 +151,16 @@ export default function Orders() {
                         <Link to={`/bill/${order._id}`} className="btn btn-primary">
                           View Bill
                         </Link>
-                        <button
-                          type="button"
-                          className="btn btn-danger"
-                          onClick={() => handleDeleteOrder(order._id, order.billNumber)}
-                          style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                        >
-                          Delete
-                        </button>
+                        {!order.isDeleted && (
+                          <button
+                            type="button"
+                            className="btn btn-danger"
+                            onClick={() => handleDeleteOrder(order._id, order.billNumber)}
+                            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                          >
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

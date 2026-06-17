@@ -33,16 +33,7 @@ export default function Orders() {
     return () => clearTimeout(timer);
   }, [search, startDate, endDate]);
 
-  async function handleDeleteOrder(id, billNumber) {
-    if (window.confirm(`Are you sure you want to delete order "${billNumber}"?`)) {
-      try {
-        await api.deleteOrder(id);
-        loadOrders();
-      } catch (err) {
-        alert(err.message || 'Failed to delete order');
-      }
-    }
-  }
+
 
   return (
     <div className="card">
@@ -151,16 +142,7 @@ export default function Orders() {
                         <Link to={`/bill/${order._id}`} className="btn btn-primary">
                           View Bill
                         </Link>
-                        {!order.isDeleted && (
-                          <button
-                            type="button"
-                            className="btn btn-danger"
-                            onClick={() => handleDeleteOrder(order._id, order.billNumber)}
-                            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                          >
-                            Delete
-                          </button>
-                        )}
+
                       </div>
                     </td>
                   </tr>

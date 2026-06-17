@@ -13,16 +13,7 @@ export default function BillView() {
   const [error, setError] = useState('');
 
 
-  async function handleDelete() {
-    if (window.confirm(`Are you sure you want to delete this bill (${order?.billNumber})?`)) {
-      try {
-        await api.deleteOrder(order._id);
-        navigate('/orders');
-      } catch (err) {
-        setError(err.message || 'Failed to delete bill');
-      }
-    }
-  }
+
 
   async function loadData(showLoading = true) {
     if (showLoading) setLoading(true);
@@ -117,18 +108,9 @@ export default function BillView() {
           Download PDF
         </button>
         {!order.isDeleted && (
-          <>
-            <Link to={`/edit-bill/${order._id}`} className="btn btn-secondary">
-              Edit Bill
-            </Link>
-            <button
-              type="button"
-              className="btn btn-danger"
-              onClick={handleDelete}
-            >
-              Delete Bill
-            </button>
-          </>
+          <Link to={`/edit-bill/${order._id}`} className="btn btn-secondary">
+            Edit Bill
+          </Link>
         )}
       </div>
 

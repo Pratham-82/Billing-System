@@ -11,6 +11,7 @@ export default function BillView() {
   const [customerAccount, setCustomerAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [orientation, setOrientation] = useState('portrait');
 
   async function handleDelete() {
     if (window.confirm(`Are you sure you want to delete this bill (${order?.billNumber})?`)) {
@@ -64,7 +65,7 @@ export default function BillView() {
       filename:     `${order.billNumber}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: orientation }
     };
 
     return window.html2pdf()
@@ -96,7 +97,18 @@ export default function BillView() {
         </div>
       )}
 
-      <div className="btn-row no-print" style={{ marginBottom: 20, alignItems: 'center' }}>
+      <style>
+        {`
+          @media print {
+            @page {
+              size: ${orientation} !important;
+              margin: 0 !important;
+            }
+          }
+        `}
+      </style>
+
+      <div className="btn-row no-print" style={{ marginBottom: 20, alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         <button
           type="button"
           className="btn btn-primary"
@@ -104,6 +116,32 @@ export default function BillView() {
         >
           Download PDF
         </button>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => window.print()}
+        >
+          Print Bill
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Orientation:</span>
+          <select
+            value={orientation}
+            onChange={(e) => setOrientation(e.target.value)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '4px',
+              border: '1px solid var(--border)',
+              backgroundColor: 'var(--bg-card)',
+              color: 'var(--text)',
+              fontSize: '0.9rem',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+        </div>
         {!order.isDeleted && (
           <>
             <Link to={`/edit-bill/${order._id}`} className="btn btn-secondary">

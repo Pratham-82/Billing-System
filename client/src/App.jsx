@@ -67,14 +67,18 @@ function App() {
   return (
     <div className="app-shell">
       <header className="topbar no-print">
-        <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <img src={logo} alt="Speaking Wall Interio Logo" style={{ height: '48px', objectFit: 'contain' }} />
-          <div>
-            <h1 style={{ margin: 0 }}>Speaking Wall Interio</h1>
-            <p style={{ margin: '4px 0 0' }}>Billing & customer management</p>
+        <div className="brand" onClick={() => navigate('/')}>
+          <img 
+            src={logo} 
+            alt="Speaking Wall Interio Logo" 
+            className="brand-logo"
+          />
+          <div className="brand-text">
+            <h1>Speaking Wall Interio</h1>
+            <p>Billing & customer management</p>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div className="topbar-actions">
           {user && (
             <nav className="nav">
               <NavLink to="/" end>Dashboard</NavLink>
@@ -86,23 +90,19 @@ function App() {
               {isSuperUser && <NavLink to="/users">Users</NavLink>}
             </nav>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="topbar-user-area">
             {user && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                  👤 <strong>{user.username}</strong>
-                </span>
+              <div className="user-widget">
+                <div className="user-avatar">
+                  {user.username ? user.username.charAt(0) : 'U'}
+                </div>
+                <div className="user-info">
+                  <span className="user-name">{user.username}</span>
+                  <span className="user-role">{user.role === 'superuser' ? 'Admin' : 'Staff'}</span>
+                </div>
                 <button
                   onClick={handleLogout}
-                  className="btn"
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text)',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    fontSize: '0.85rem'
-                  }}
+                  className="btn-logout"
                 >
                   Logout
                 </button>
@@ -112,21 +112,6 @@ function App() {
               onClick={toggleTheme}
               className="theme-toggle"
               aria-label="Toggle theme"
-              style={{
-                background: 'var(--surface-alt)',
-                border: '1px solid var(--border)',
-                color: 'var(--text)',
-                padding: '8px',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '40px',
-                height: '40px',
-                fontSize: '1.2rem',
-                transition: 'all 0.2s ease',
-              }}
             >
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>

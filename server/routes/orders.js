@@ -3,6 +3,7 @@ const Order = require('../models/Order');
 const Customer = require('../models/Customer');
 const generateBillNumber = require('../utils/generateBillNumber');
 const { normalizePayment } = require('../utils/payment');
+const { requireSuperUser } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -112,7 +113,7 @@ router.patch('/:id/payment', async (req, res) => {
   }
 });
 
-router.get('/report', async (req, res) => {
+router.get('/report', requireSuperUser, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     let query = { isDeleted: { $ne: true } };
@@ -354,7 +355,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireSuperUser, async (req, res) => {
   try {
     const orderDoc = await Order.findById(req.params.id);
     if (!orderDoc) {
@@ -532,7 +533,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireSuperUser, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {

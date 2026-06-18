@@ -1,14 +1,25 @@
 const API_BASE = '/api';
 
 async function request(path, options = {}) {
+  const token = localStorage.getItem('token');
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers,
     ...options,
   });
 
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
     throw new Error(data.message || 'Something went wrong');
   }
 
@@ -92,4 +103,15 @@ export const api = {
     request(`/items/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteItem: (id) =>
     request(`/items/${id}`, { method: 'DELETE' }),
+
+  login: (username, password) =>
+    request('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  getCurrentUser: () =>
+    request('/auth/me'),
+  getUsers: () =>
+    request('/auth/users'),
+  createUser: (data) =>
+    request('/auth/users', { method: 'POST', body: JSON.stringify(data) }),
+  deleteUser: (id) =>
+    request(`/auth/users/${id}`, { method: 'DELETE' }),
 };

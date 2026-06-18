@@ -1,5 +1,6 @@
 const express = require('express');
 const Item = require('../models/Item');
+const { requireSuperUser } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create item
-router.post('/', async (req, res) => {
+router.post('/', requireSuperUser, async (req, res) => {
   try {
     const { name, type, defaultPrice } = req.body;
     if (!name?.trim()) {
@@ -50,7 +51,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update item
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireSuperUser, async (req, res) => {
   try {
     const { name, type, defaultPrice } = req.body;
     if (!name?.trim()) {
@@ -86,7 +87,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete item
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireSuperUser, async (req, res) => {
   try {
     const deletedItem = await Item.findByIdAndDelete(req.params.id);
     if (!deletedItem) {

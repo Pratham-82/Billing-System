@@ -6,6 +6,9 @@ const mongoose = require('mongoose');
 const customerRoutes = require('./routes/customers');
 const orderRoutes = require('./routes/orders');
 const itemRoutes = require('./routes/items');
+const authRoutes = require('./routes/auth');
+const { requireAuth } = require('./middleware/auth');
+const seedAdmin = require('./utils/seedAdmin');
 const migratePaymentsToCustomer = require('./utils/migration');
 
 const app = express();
@@ -19,9 +22,10 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', message: 'Wallpaper billing API is running' });
 });
 
-app.use('/api/customers', customerRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/items', itemRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/customers', requireAuth, customerRoutes);
+app.use('/api/orders', requireAuth, orderRoutes);
+app.use('/api/items', requireAuth, itemRoutes);
 
 // Serve client static assets and handle client-side routing fallback
 const path = require('path');
@@ -47,6 +51,8 @@ mongoose
     console.log('Connected to MongoDB');
     // Run payments migration
     await migratePaymentsToCustomer();
+    // Seed initial superuser account
+    await seedAdmin();
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });

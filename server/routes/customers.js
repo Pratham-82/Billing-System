@@ -2,6 +2,7 @@ const express = require('express');
 const Customer = require('../models/Customer');
 const Order = require('../models/Order');
 const { getEffectiveAmountPaid } = require('../utils/payment');
+const { requireSuperUser } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -166,6 +167,10 @@ router.post('/:id/payment', async (req, res) => {
     let paymentAmount = Number(req.body.amount) || 0;
     let discountAmount = Number(req.body.discount) || 0;
 
+    if (discountAmount > 0 && req.user.role !== 'superuser') {
+      return res.status(403).json({ message: 'Access denied: Only Super Users can apply settlement discounts' });
+    }
+
     if (isNaN(paymentAmount) || paymentAmount < 0) {
       return res.status(400).json({ message: 'Invalid payment amount' });
     }
@@ -208,7 +213,7 @@ router.post('/:id/payment', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireSuperUser, async (req, res) => {
   try {
     const customer = await Customer.findById(req.params.id);
     if (!customer) {

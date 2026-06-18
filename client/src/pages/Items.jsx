@@ -3,6 +3,14 @@ import { api } from '../api';
 import { formatCurrency } from '../utils/format';
 
 export default function Items() {
+  const userStr = localStorage.getItem('user');
+  let isSuperUser = false;
+  if (userStr) {
+    try {
+      isSuperUser = JSON.parse(userStr).role === 'superuser';
+    } catch (e) {}
+  }
+
   const [catalog, setCatalog] = useState([]);
   const [search, setSearch] = useState('');
   const [activeModal, setActiveModal] = useState(null); // 'add' | 'edit' | null
@@ -121,9 +129,11 @@ export default function Items() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 className="section-title" style={{ marginBottom: 0 }}>Item Type Catalog</h2>
-        <button type="button" className="btn btn-primary" onClick={openAddModal}>
-          + Add Item Type
-        </button>
+        {isSuperUser && (
+          <button type="button" className="btn btn-primary" onClick={openAddModal}>
+            + Add Item Type
+          </button>
+        )}
       </div>
 
       <div className="search-bar" style={{ marginBottom: 20 }}>
@@ -147,7 +157,7 @@ export default function Items() {
                 <th>Name</th>
                 <th>Type</th>
                 <th>Default Price</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                {isSuperUser && <th style={{ textAlign: 'right' }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -164,24 +174,26 @@ export default function Items() {
                       })()}
                     </td>
                     <td>{item.defaultPrice ? formatCurrency(item.defaultPrice) : '—'}</td>
-                    <td>
-                      <div className="btn-row" style={{ justifyContent: 'flex-end', gap: '8px' }}>
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => openEditModal(item)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger"
-                          onClick={() => handleDelete(item._id, item.name)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
+                    {isSuperUser && (
+                      <td>
+                        <div className="btn-row" style={{ justifyContent: 'flex-end', gap: '8px' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => openEditModal(item)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-danger"
+                            onClick={() => handleDelete(item._id, item.name)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

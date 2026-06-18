@@ -12,6 +12,14 @@ export default function BillView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const userStr = localStorage.getItem('user');
+  let isSuperUser = false;
+  if (userStr) {
+    try {
+      isSuperUser = JSON.parse(userStr).role === 'superuser';
+    } catch (e) {}
+  }
+
 
 
 
@@ -115,7 +123,7 @@ export default function BillView() {
         >
           Download PDF
         </button>
-        {!order.isDeleted && (
+        {!order.isDeleted && isSuperUser && (
           <Link to={`/edit-bill/${order._id}`} className="btn btn-secondary">
             Edit Bill
           </Link>

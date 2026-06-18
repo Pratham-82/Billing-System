@@ -21,6 +21,14 @@ function getOrderTotalSqFt(order) {
 }
 
 export default function Customers() {
+  const userStr = localStorage.getItem('user');
+  let isSuperUser = false;
+  if (userStr) {
+    try {
+      isSuperUser = JSON.parse(userStr).role === 'superuser';
+    } catch (e) {}
+  }
+
   const [search, setSearch] = useState('');
   const [customers, setCustomers] = useState([]);
   const [accountData, setAccountData] = useState(null);
@@ -589,14 +597,16 @@ export default function Customers() {
                 >
                   ✏️ Edit Info
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  style={{ padding: '6px 12px', fontSize: '0.85rem', borderRadius: '8px' }}
-                  onClick={() => handleDeleteCustomer(customer._id, customer.name)}
-                >
-                  🗑️ Delete Account
-                </button>
+                {isSuperUser && (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    style={{ padding: '6px 12px', fontSize: '0.85rem', borderRadius: '8px' }}
+                    onClick={() => handleDeleteCustomer(customer._id, customer.name)}
+                  >
+                    🗑️ Delete Account
+                  </button>
+                )}
               </div>
             </div>
 
@@ -641,18 +651,20 @@ export default function Customers() {
                       style={{ padding: '8px 12px' }}
                     />
                   </div>
-                  <div className="field" style={{ margin: 0, flex: 1, minWidth: '150px' }}>
-                    <label>Settlement Discount</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={account.balanceDue - (Number(paymentInput) || 0)}
-                      value={discountInput}
-                      onChange={(e) => setDiscountInput(e.target.value)}
-                      placeholder="e.g. 100"
-                      style={{ padding: '8px 12px' }}
-                    />
-                  </div>
+                  {isSuperUser && (
+                    <div className="field" style={{ margin: 0, flex: 1, minWidth: '150px' }}>
+                      <label>Settlement Discount</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={account.balanceDue - (Number(paymentInput) || 0)}
+                        value={discountInput}
+                        onChange={(e) => setDiscountInput(e.target.value)}
+                        placeholder="e.g. 100"
+                        style={{ padding: '8px 12px' }}
+                      />
+                    </div>
+                  )}
                   <button type="submit" className="btn btn-primary" style={{ height: '42px' }} disabled={submittingPayment}>
                     {submittingPayment ? 'Saving...' : 'Apply Payment'}
                   </button>
